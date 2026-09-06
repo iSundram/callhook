@@ -10,15 +10,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/iSundram/calle/internal/calleclient"
-	"github.com/iSundram/calle/internal/callwindow"
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/callwindow"
+	"github.com/iSundram/callhook/internal/session"
 )
 
 // Scheduler polls for due triggers and places the calls.
 type Scheduler struct {
 	Sessions *session.Store
-	Place    func(*session.Session) (*calleclient.CallTask, bool, error)
+	Place    func(*session.Session) (*callhookclient.CallTask, bool, error)
 	Tick     time.Duration // poll interval, default 15s
 	// EnforceWindows re-defers calls that come due outside polite hours.
 	EnforceWindows bool

@@ -1,15 +1,15 @@
 .PHONY: build run test vet docker clean
 
 build:
-	go build -o bin/calle ./cmd/calle
-	go build -o bin/callectl ./cmd/callectl
+	go build -o bin/callhook ./cmd/callhook
+	go build -o bin/callhookctl ./cmd/callhookctl
 
 run:
-	go run ./cmd/calle
+	go run ./cmd/callhook
 
 # Dry-run demo server: no API key, short retry delay, fast scheduler tick.
 demo:
-	CALLE_RETRY_DELAY=5s CALLE_RETRY_TICK=1s go run ./cmd/calle
+	CALLHOOK_RETRY_DELAY=5s CALLHOOK_RETRY_TICK=1s go run ./cmd/callhook
 
 test:
 	go test ./...
@@ -18,7 +18,7 @@ vet:
 	go vet ./...
 
 docker:
-	docker build -t calle:latest .
+	docker build -t callhook:latest .
 
 clean:
 	rm -rf bin data

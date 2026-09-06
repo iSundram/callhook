@@ -1,21 +1,21 @@
-# calle
+# callhook
 
-**Event-driven AI phone calls.** Your system fires a webhook; calle places an
+**Event-driven AI phone calls.** Your system fires a webhook; callhook places an
 intelligent phone call via [CALL-E](https://heycall-e.com) and POSTs a
 structured outcome back. No scripts, no robocalls — a voice agent that knows
 the customer's context before it dials.
 
-**📖 Documentation: https://calle-sh.github.io**
+**📖 Documentation: https://callhook.github.io**
 
 > **The voice channel as an API.** Most phone-agent projects are one
-> workflow: confirm an appointment, fill a shift, chase one invoice. calle
+> workflow: confirm an appointment, fill a shift, chase one invoice. callhook
 > is the layer underneath: point *any* business system at one endpoint,
 > fire *any* event type, and get intelligent calls with structured outcomes
 > back — with retry policy, polite calling hours, crash-safe persistence,
 > and a full audit trail included.
 
 ```
-business app ──POST /api/events──► calle ──CALL-E API──► 📞 customer
+business app ──POST /api/events──► callhook ──CALL-E API──► 📞 customer
      ▲                                │
      └── outcome webhook ◄────────────┘
          {outcome, promise_date, actions, transcript, confidence}
@@ -49,20 +49,20 @@ business app ──POST /api/events──► calle ──CALL-E API──► �
 | Polite hours | Calls and redials deferred to 9:00–20:00 recipient-local, weekdays (per-region timezone, overridable per event) |
 | Courtesy retries | `no_answer` redials up to 2 times; refusals and blocked/invalid numbers are never redialed |
 | Scheduled calls | `not_before` on any event parks it until the requested time |
-| Not forgeable | Webhook shared secret (`X-Calle-Secret`) + bearer-token intake (set both on a public tunnel) |
+| Not forgeable | Webhook shared secret (`X-Callhook-Secret`) + bearer-token intake (set both on a public tunnel) |
 | Flood-safe | Per-source rate limiting on event intake (60/min) |
 
 ## Quickstart
 
 ```bash
 # Dry-run mode (no API key needed — fabricates results, burns no balance):
-make run            # or: go run ./cmd/calle
+make run            # or: go run ./cmd/callhook
 
 # Real calls:
-export CALLE_API_KEY=iams_live_...
-export CALLE_PUBLIC_URL=https://your-tunnel.example.com   # so CALL-E can reach /calle/webhook
-export CALLE_INTAKE_TOKEN=... CALLE_WEBHOOK_SECRET=...    # auth on a public tunnel
-go run ./cmd/calle
+export CALLHOOK_API_KEY=iams_live_...
+export CALLHOOK_PUBLIC_URL=https://your-tunnel.example.com   # so CALL-E can reach /callhook/webhook
+export CALLHOOK_INTAKE_TOKEN=... CALLHOOK_WEBHOOK_SECRET=...    # auth on a public tunnel
+go run ./cmd/callhook
 ```
 
 Open the live dashboard at `http://localhost:8080/` — fire demo events with
@@ -76,7 +76,7 @@ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{
   "id": "evt_001",
   "type": "invoice.due",
   "customer_id": "cus_1002",
-  "callback_url": "https://your-app.example.com/hooks/calle",
+  "callback_url": "https://your-app.example.com/hooks/callhook",
   "not_before": "2026-09-07T14:00:00Z",
   "payload": {}
 }'
@@ -89,9 +89,9 @@ Batch variant: `POST /api/events/batch` with `{"events": [...]}`.
 There is also a CLI:
 
 ```bash
-go run ./cmd/callectl fire invoice.due cus_1002 --not-before 2026-09-07T14:00:00Z
-go run ./cmd/callectl sessions --watch
-go run ./cmd/callectl metrics
+go run ./cmd/callhookctl fire invoice.due cus_1002 --not-before 2026-09-07T14:00:00Z
+go run ./cmd/callhookctl sessions --watch
+go run ./cmd/callhookctl metrics
 ```
 
 ### Supported events
@@ -108,12 +108,12 @@ Adding a new event type = one blueprint in `internal/events/router.go`
 ## Architecture
 
 ```
-cmd/calle/            entrypoint, config, graceful shutdown
-cmd/callectl/         CLI client (fire, batch, sessions, metrics)
+cmd/callhook/            entrypoint, config, graceful shutdown
+cmd/callhookctl/         CLI client (fire, batch, sessions, metrics)
 internal/api/         HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting
 internal/events/      event schema + router (event type → call blueprint)
 internal/business/    business Store interface + mock (swap for your CRM/billing)
-internal/calleclient/ CALL-E Developer API client: calls + Goals API (docs/calle.openapi.yaml)
+internal/callhookclient/ CALL-E Developer API client: calls + Goals API (docs/callhook.openapi.yaml)
 internal/session/     session registry + audit log + retry/schedule triggers
 internal/outcome/     outcome engine: policy-gated writes, escalation, retry policy, callback
 internal/retry/       scheduler: redials, calling-window deferrals, scheduled starts
@@ -125,15 +125,15 @@ internal/store/       crash-safe JSONL journal persistence
   business writes only happen post-call, from the structured result — never
   from raw conversation. Every action is audit-logged.
 - **The mock store is the product surface:** implementing `business.Store`
-  against a real CRM/billing API turns calle into a production integration.
+  against a real CRM/billing API turns callhook into a production integration.
 
 ## Goals API (enterprise path)
 
 Besides free-text call tasks, CALL-E supports **Goals** — reusable, versioned
 call workflows with typed input and result schemas, published through their
-Chat product. calle supports both paths: set `GoalID` (and optionally
+Chat product. callhook supports both paths: set `GoalID` (and optionally
 `Variables`) on a blueprint and that event type executes the pinned,
-schema-validated goal instead of a composed task. Free-text tasks keep calle
+schema-validated goal instead of a composed task. Free-text tasks keep callhook
 zero-setup and fully generic; Goals give enterprises versioned, governed
 workflows. The client implements `ListGoals`, `CreateGoalRun`, `GetGoalRun`.
 
@@ -141,7 +141,7 @@ workflows. The client implements `ListGoals`, `CreateGoalRun`, `GetGoalRun`.
 
 - **No extra LLM.** CALL-E's voice agent is the conversational brain. Task
   composition is deterministic templates — a hallucinated amount or date
-  spoken on a call is a real failure, so calle's orchestration is auditable
+  spoken on a call is a real failure, so callhook's orchestration is auditable
   code, not model output.
 - **No inbound calls / telephony.** That's CALL-E's job (~45 countries, IVR,
   voicemail, transfer handling).

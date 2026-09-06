@@ -1,5 +1,5 @@
 /**
- * calle Documentation — Interactive Client Engine
+ * callhook Documentation — Interactive Client Engine
  * Zero dependencies, pure vanilla JavaScript
  */
 
@@ -7,7 +7,7 @@
   'use strict';
 
   // --- 1. THEME MANAGER ---
-  const THEME_KEY = 'calle_docs_theme';
+  const THEME_KEY = 'callhook_docs_theme';
   
   function getPreferredTheme() {
     try {
@@ -196,15 +196,15 @@
     { title: 'Operational Guarantees', cat: 'Home', url: '/index.html#guarantees' },
     { title: 'Fire your first event', cat: 'Home', url: '/index.html#first-event' },
     
-    { title: 'Quickstart: 1. Run calle', cat: 'Quickstart', url: '/pages/quickstart.html#run-calle' },
+    { title: 'Quickstart: 1. Run callhook', cat: 'Quickstart', url: '/pages/quickstart.html#run-callhook' },
     { title: 'Quickstart: 2. Watch dashboard', cat: 'Quickstart', url: '/pages/quickstart.html#watch-dashboard' },
     { title: 'Quickstart: 3. Fire a real event', cat: 'Quickstart', url: '/pages/quickstart.html#fire-real-event' },
-    { title: 'Quickstart: 4. Use the CLI (callectl)', cat: 'Quickstart', url: '/pages/quickstart.html#use-cli' },
+    { title: 'Quickstart: 4. Use the CLI (callhookctl)', cat: 'Quickstart', url: '/pages/quickstart.html#use-cli' },
     { title: 'Quickstart: 5. Going live', cat: 'Quickstart', url: '/pages/quickstart.html#going-live' },
 
     { title: 'POST /api/events', cat: 'API', url: '/pages/api.html#post-events' },
     { title: 'POST /api/events/batch', cat: 'API', url: '/pages/api.html#post-batch' },
-    { title: 'POST /calle/webhook', cat: 'API', url: '/pages/api.html#post-webhook' },
+    { title: 'POST /callhook/webhook', cat: 'API', url: '/pages/api.html#post-webhook' },
     { title: 'GET /api/sessions', cat: 'API', url: '/pages/api.html#get-sessions' },
     { title: 'GET /api/metrics', cat: 'API', url: '/pages/api.html#get-metrics' },
     { title: 'GET /api/health', cat: 'API', url: '/pages/api.html#get-health' },

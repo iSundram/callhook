@@ -1,4 +1,4 @@
-/* calle documentation — Official Brand Design System */
+/* callhook documentation — Official Brand Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
@@ -1134,7 +1134,7 @@ td:first-child {
   transform: translateY(-2px);
 }
 
-.pipeline-node.calle-core {
+.pipeline-node.callhook-core {
   border-color: var(--border-medium);
   background: rgba(92, 78, 78, 0.2);
   box-shadow: 0 0 16px rgba(92, 78, 78, 0.2);

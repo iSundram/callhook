@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iSundram/calle/internal/business"
+	"github.com/iSundram/callhook/internal/business"
 )
 
 // Blueprint describes how one event type becomes a phone call: the task

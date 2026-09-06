@@ -1,6 +1,6 @@
-// Package calleclient is a Go client for the CALL-E Developer API
-// (https://api.heycall-e.com). Contract: docs/calle.openapi.yaml.
-package calleclient
+// Package callhookclient is a Go client for the CALL-E Developer API
+// (https://api.heycall-e.com). Contract: docs/callhook.openapi.yaml.
+package callhookclient
 
 import (
 	"bytes"
@@ -158,7 +158,7 @@ func (c *Client) doCall(req *http.Request) (*CallTask, error) {
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("calle api %s: %s", resp.Status, truncate(raw, 400))
+		return nil, fmt.Errorf("callhook api %s: %s", resp.Status, truncate(raw, 400))
 	}
 	var task CallTask
 	if err := json.Unmarshal(raw, &task); err != nil {
@@ -275,7 +275,7 @@ func (c *Client) ListGoals(ctx context.Context) (*GoalList, error) {
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("calle goals %s: %s", resp.Status, truncate(raw, 400))
+		return nil, fmt.Errorf("callhook goals %s: %s", resp.Status, truncate(raw, 400))
 	}
 	var list GoalList
 	if err := json.Unmarshal(raw, &list); err != nil {
@@ -304,7 +304,7 @@ func (c *Client) CreateGoalRun(ctx context.Context, goalID, phone string, variab
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("calle goal run %s: %s", resp.Status, truncate(raw, 400))
+		return nil, fmt.Errorf("callhook goal run %s: %s", resp.Status, truncate(raw, 400))
 	}
 	var run GoalRun
 	if err := json.Unmarshal(raw, &run); err != nil {
@@ -327,7 +327,7 @@ func (c *Client) GetGoalRun(ctx context.Context, goalID, runID string) (*GoalRun
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("calle goal run %s: %s", resp.Status, truncate(raw, 400))
+		return nil, fmt.Errorf("callhook goal run %s: %s", resp.Status, truncate(raw, 400))
 	}
 	var run GoalRun
 	if err := json.Unmarshal(raw, &run); err != nil {

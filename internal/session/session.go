@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iSundram/calle/internal/business"
-	"github.com/iSundram/calle/internal/calleclient"
-	"github.com/iSundram/calle/internal/events"
+	"github.com/iSundram/callhook/internal/business"
+	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/events"
 )
 
 // MaxRetries is the number of redials after the first attempt.
@@ -36,7 +36,7 @@ type Session struct {
 	CallID       string
 	CallStatus   string
 	Outcome      map[string]any
-	Transcript   []calleclient.Turn
+	Transcript   []callhookclient.Turn
 	Actions      []Action
 	RetryCount   int
 	NextRetryAt  *time.Time
@@ -242,7 +242,7 @@ func (s *Store) Log(id, kind, detail string) {
 }
 
 // SetCall records the placed call on its session.
-func (s *Store) SetCall(id string, task *calleclient.CallTask) {
+func (s *Store) SetCall(id string, task *callhookclient.CallTask) {
 	s.mutate(id, func(sess *Session) {
 		sess.CallID = task.ID
 		sess.CallStatus = task.Status
@@ -253,7 +253,7 @@ func (s *Store) SetCall(id string, task *calleclient.CallTask) {
 
 // SetTerminal records the terminal call state, structured result and
 // transcript.
-func (s *Store) SetTerminal(callID, status string, result map[string]any, transcript []calleclient.Turn) {
+func (s *Store) SetTerminal(callID, status string, result map[string]any, transcript []callhookclient.Turn) {
 	s.mu.Lock()
 	for _, sess := range s.sessions {
 		if sess.CallID == callID {
@@ -346,7 +346,7 @@ type SessionView struct {
 	Outcome       map[string]any `json:"outcome"`
 	Actions       []Action       `json:"actions"`
 	Task          string         `json:"task"`
-	Transcript    []calleclient.Turn `json:"transcript"`
+	Transcript    []callhookclient.Turn `json:"transcript"`
 	RetryCount    int            `json:"retry_count"`
 	NextRetryAt   *time.Time     `json:"next_retry_at"`
 	NextRetryKind string         `json:"next_retry_kind"`

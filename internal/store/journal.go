@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/session"
 )
 
 // Journal appends session snapshots to a JSONL file.

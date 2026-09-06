@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iSundram/calle/internal/business"
-	"github.com/iSundram/calle/internal/calleclient"
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/business"
+	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/session"
 )// Engine applies outcomes. Writes are policy-gated: confident, unambiguous
 // results write to the business store; anything uncertain escalates to a
 // human instead of acting.
@@ -30,7 +30,7 @@ func New(st business.Store, sessions *session.Store) *Engine {
 }
 
 // Apply processes one terminal webhook event from CALL-E.
-func (e *Engine) Apply(ev *calleclient.WebhookEvent) {
+func (e *Engine) Apply(ev *callhookclient.WebhookEvent) {
 	sess, ok := e.Sessions.FindByCallID(ev.Data.ID)
 	if !ok {
 		log.Printf("outcome: no session for call %s — ignoring", ev.Data.ID)
@@ -100,7 +100,7 @@ func (e *Engine) Apply(ev *calleclient.WebhookEvent) {
 	}
 }
 
-func (e *Engine) retryable(ev *calleclient.WebhookEvent, outcomeVal, sessID string) bool {
+func (e *Engine) retryable(ev *callhookclient.WebhookEvent, outcomeVal, sessID string) bool {
 	// Extracted outcome says nobody answered.
 	if outcomeVal == "no_answer" {
 		return e.Sessions.RetryState(sessID) < session.MaxRetries
@@ -121,7 +121,7 @@ func (e *Engine) retryable(ev *calleclient.WebhookEvent, outcomeVal, sessID stri
 	return false
 }
 
-func (e *Engine) postBack(sess *session.Session, ev *calleclient.WebhookEvent, actions []string) {
+func (e *Engine) postBack(sess *session.Session, ev *callhookclient.WebhookEvent, actions []string) {
 	payload := map[string]any{
 		"event_id":     sess.Event.ID,
 		"event_type":   sess.Event.Type,
@@ -149,7 +149,7 @@ func (e *Engine) postBack(sess *session.Session, ev *calleclient.WebhookEvent, a
 	e.Sessions.Log(sess.ID, "callback_sent", sess.Event.CallbackURL+" → "+resp.Status)
 }
 
-func transcriptOf(task calleclient.CallTask) []calleclient.Turn {
+func transcriptOf(task callhookclient.CallTask) []callhookclient.Turn {
 	for _, att := range task.Attempts {
 		if len(att.TranscriptTurns) > 0 {
 			return att.TranscriptTurns

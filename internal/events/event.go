@@ -7,7 +7,7 @@ import (
 )
 
 // Event is the universal inbound payload. Any business system fires one of
-// these at POST /api/events and calle handles all phone communication.
+// these at POST /api/events and callhook handles all phone communication.
 type Event struct {
 	ID           string          `json:"id"`
 	Type         string          `json:"type"`             // e.g. invoice.due, account.warning, promo.offer

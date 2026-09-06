@@ -1,9 +1,9 @@
-// callectl — command line client for a running calle server.
+// callhookctl — command line client for a running callhook server.
 //
-//	callectl fire invoice.due cus_1002 [--phone +1...] [--not-before 2026-09-07T10:00:00Z]
-//	callectl batch events.json
-//	callectl sessions [--watch]
-//	callectl metrics
+//	callhookctl fire invoice.due cus_1002 [--phone +1...] [--not-before 2026-09-07T10:00:00Z]
+//	callhookctl batch events.json
+//	callhookctl sessions [--watch]
+//	callhookctl metrics
 package main
 
 import (
@@ -18,8 +18,8 @@ import (
 )
 
 func main() {
-	base := envOr("CALLE_URL", "http://localhost:8080")
-	token := os.Getenv("CALLE_INTAKE_TOKEN")
+	base := envOr("CALLHOOK_URL", "http://localhost:8080")
+	token := os.Getenv("CALLHOOK_INTAKE_TOKEN")
 
 	if len(os.Args) < 2 {
 		usage()
@@ -48,7 +48,7 @@ func fire(base, token string, args []string) {
 	payload := fs.String("payload", "{}", "event payload JSON")
 	_ = fs.Parse(args)
 	if fs.NArg() < 2 {
-		fmt.Fprintln(os.Stderr, "usage: callectl fire <type> <customer_id> [flags]")
+		fmt.Fprintln(os.Stderr, "usage: callhookctl fire <type> <customer_id> [flags]")
 		os.Exit(1)
 	}
 	ev := map[string]any{
@@ -70,7 +70,7 @@ func fire(base, token string, args []string) {
 
 func batch(base, token string, args []string) {
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "usage: callectl batch events.json")
+		fmt.Fprintln(os.Stderr, "usage: callhookctl batch events.json")
 		os.Exit(1)
 	}
 	raw, err := os.ReadFile(args[0])
@@ -176,16 +176,16 @@ func envOr(key, def string) string {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, `callectl — command line client for calle
+	fmt.Fprintln(os.Stderr, `callhookctl — command line client for callhook
 
 usage:
-  callectl fire <type> <customer_id> [--phone +E164] [--not-before RFC3339] [--payload JSON]
-  callectl batch <events.json>
-  callectl sessions [--watch]
-  callectl metrics
+  callhookctl fire <type> <customer_id> [--phone +E164] [--not-before RFC3339] [--payload JSON]
+  callhookctl batch <events.json>
+  callhookctl sessions [--watch]
+  callhookctl metrics
 
 env:
-  CALLE_URL          server base URL (default http://localhost:8080)
-  CALLE_INTAKE_TOKEN bearer token when the server has auth enabled`)
+  CALLHOOK_URL          server base URL (default http://localhost:8080)
+  CALLHOOK_INTAKE_TOKEN bearer token when the server has auth enabled`)
 	os.Exit(1)
 }

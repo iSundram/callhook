@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Production — calle</title>
+  <title>Production — callhook</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icon-tight.svg">
   <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -14,8 +14,8 @@
   <div class="nav-inner">
     <div class="nav-left">
       <a href="../index.html" class="nav-logo">
-        <img src="../assets/icon-tight.svg" alt="calle logo" class="logo-mark" width="20" height="18">
-        <span>calle<span class="dot">.</span>sh</span>
+        <img src="../assets/icon-tight.svg" alt="callhook logo" class="logo-mark" width="20" height="18">
+        <span>callhook</span>
       </a>
       <div class="nav-links">
         <a href="quickstart.html">Quickstart</a>
@@ -37,7 +37,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       </button>
 
-      <a class="nav-gh-link" href="https://github.com/iSundram/calle" target="_blank" rel="noopener" aria-label="GitHub Repository">
+      <a class="nav-gh-link" href="https://github.com/iSundram/callhook" target="_blank" rel="noopener" aria-label="GitHub Repository">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         <span>GitHub</span>
       </a>
@@ -54,8 +54,8 @@
 <aside class="mobile-drawer">
   <div class="drawer-header">
     <a href="../index.html" class="nav-logo">
-      <img src="../assets/icon-tight.svg" alt="calle logo" class="logo-mark" width="20" height="18">
-      <span>calle<span class="dot">.</span>sh</span>
+      <img src="../assets/icon-tight.svg" alt="callhook logo" class="logo-mark" width="20" height="18">
+      <span>callhook</span>
     </a>
     <button class="drawer-close" aria-label="Close menu">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -128,25 +128,25 @@
     </div>
 
     <h2 id="api-key">1. API key</h2>
-    <pre><code>export <span class="kw">CALLE_API_KEY</span>=iams_live_...</code></pre>
-    <p>Without it calle fabricates results locally (dry-run). With it, every call is real and bills your CALL-E balance. There is no other switch.</p>
+    <pre><code>export <span class="kw">CALLHOOK_API_KEY</span>=iams_live_...</code></pre>
+    <p>Without it callhook fabricates results locally (dry-run). With it, every call is real and bills your CALL-E balance. There is no other switch.</p>
 
     <h2 id="tunnel">2. Public webhook via tunnel</h2>
-    <p>CALL-E POSTs terminal results to <code>/calle/webhook</code> — it needs to reach you.</p>
+    <p>CALL-E POSTs terminal results to <code>/callhook/webhook</code> — it needs to reach you.</p>
     <pre><code>$ cloudflared tunnel --url http://localhost:8080
 <span class="cm"># or: ngrok http 8080</span>
 
-export <span class="kw">CALLE_PUBLIC_URL</span>=https://your-tunnel.example.com</code></pre>
-    <p>calle automatically sets <code>webhook_url</code> on every call it creates.</p>
+export <span class="kw">CALLHOOK_PUBLIC_URL</span>=https://your-tunnel.example.com</code></pre>
+    <p>callhook automatically sets <code>webhook_url</code> on every call it creates.</p>
 
     <h2 id="auth">3. Lock it down (required on any public URL)</h2>
-    <pre><code>export <span class="kw">CALLE_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># POST /api/events requires: Authorization: Bearer &lt;token&gt;</span>
-export <span class="kw">CALLE_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class="cm"># POST /calle/webhook requires: X-Calle-Secret: &lt;secret&gt;</span></code></pre>
+    <pre><code>export <span class="kw">CALLHOOK_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># POST /api/events requires: Authorization: Bearer &lt;token&gt;</span>
+export <span class="kw">CALLHOOK_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class="cm"># POST /callhook/webhook requires: X-Callhook-Secret: &lt;secret&gt;</span></code></pre>
     <p>Rate limiting (60 events/min per source) is built in.</p>
 
     <h2 id="persistence">4. Persistence</h2>
-    <pre><code>export <span class="kw">CALLE_JOURNAL</span>=/var/lib/calle/sessions.jsonl</code></pre>
-    <p>An append-only JSONL journal. On boot, calle replays it: sessions, armed retries, schedules and dedup keys all survive restarts — a crash mid-retry-cycle never silently drops or double-dials a customer.</p>
+    <pre><code>export <span class="kw">CALLHOOK_JOURNAL</span>=/var/lib/callhook/sessions.jsonl</code></pre>
+    <p>An append-only JSONL journal. On boot, callhook replays it: sessions, armed retries, schedules and dedup keys all survive restarts — a crash mid-retry-cycle never silently drops or double-dials a customer.</p>
 
     <h2 id="config">Configuration reference</h2>
     <div class="table-container">
@@ -155,16 +155,16 @@ export <span class="kw">CALLE_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class=
           <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>CALLE_API_KEY</code></td><td>—</td><td>CALL-E API key. Empty = dry-run mode.</td></tr>
-          <tr><td><code>CALLE_API_BASE</code></td><td><code>https://api.heycall-e.com</code></td><td>API base override (e.g. a proxy).</td></tr>
-          <tr><td><code>CALLE_PUBLIC_URL</code></td><td>—</td><td>Public URL CALL-E uses to deliver terminal webhooks.</td></tr>
-          <tr><td><code>CALLE_ADDR</code></td><td><code>:8080</code></td><td>HTTP listen address.</td></tr>
-          <tr><td><code>CALLE_INTAKE_TOKEN</code></td><td>—</td><td>Bearer token for event intake.</td></tr>
-          <tr><td><code>CALLE_WEBHOOK_SECRET</code></td><td>—</td><td>Shared secret for the CALL-E webhook.</td></tr>
-          <tr><td><code>CALLE_JOURNAL</code></td><td><code>data/sessions.jsonl</code></td><td>Session journal path.</td></tr>
-          <tr><td><code>CALLE_ENFORCE_WINDOWS</code></td><td><code>true</code></td><td>Defer calls outside polite local hours.</td></tr>
-          <tr><td><code>CALLE_RETRY_DELAY</code></td><td><code>2h</code></td><td>Redial delay after <code>no_answer</code>.</td></tr>
-          <tr><td><code>CALLE_RETRY_TICK</code></td><td><code>15s</code></td><td>Scheduler poll interval.</td></tr>
+          <tr><td><code>CALLHOOK_API_KEY</code></td><td>—</td><td>CALL-E API key. Empty = dry-run mode.</td></tr>
+          <tr><td><code>CALLHOOK_API_BASE</code></td><td><code>https://api.heycall-e.com</code></td><td>API base override (e.g. a proxy).</td></tr>
+          <tr><td><code>CALLHOOK_PUBLIC_URL</code></td><td>—</td><td>Public URL CALL-E uses to deliver terminal webhooks.</td></tr>
+          <tr><td><code>CALLHOOK_ADDR</code></td><td><code>:8080</code></td><td>HTTP listen address.</td></tr>
+          <tr><td><code>CALLHOOK_INTAKE_TOKEN</code></td><td>—</td><td>Bearer token for event intake.</td></tr>
+          <tr><td><code>CALLHOOK_WEBHOOK_SECRET</code></td><td>—</td><td>Shared secret for the CALL-E webhook.</td></tr>
+          <tr><td><code>CALLHOOK_JOURNAL</code></td><td><code>data/sessions.jsonl</code></td><td>Session journal path.</td></tr>
+          <tr><td><code>CALLHOOK_ENFORCE_WINDOWS</code></td><td><code>true</code></td><td>Defer calls outside polite local hours.</td></tr>
+          <tr><td><code>CALLHOOK_RETRY_DELAY</code></td><td><code>2h</code></td><td>Redial delay after <code>no_answer</code>.</td></tr>
+          <tr><td><code>CALLHOOK_RETRY_TICK</code></td><td><code>15s</code></td><td>Scheduler poll interval.</td></tr>
         </tbody>
       </table>
     </div>
@@ -223,7 +223,7 @@ export <span class="kw">CALLE_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class=
     </ul>
 
     <div class="toc-utilities">
-      <a href="https://github.com/iSundram/calle/blob/main/docs-site/pages/production.html" target="_blank" rel="noopener" class="toc-util-link">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/production.html" target="_blank" rel="noopener" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         Edit on GitHub
       </a>
@@ -236,7 +236,7 @@ export <span class="kw">CALLE_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class=
 </div>
 
 <footer>
-  <p>calle — event-driven AI phone calls · MIT</p>
+  <p>callhook — event-driven AI phone calls · MIT</p>
 </footer>
 
 <script src="../js/main.js"></script>

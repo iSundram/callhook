@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quickstart — calle</title>
+  <title>Quickstart — callhook</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icon-tight.svg">
   <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -14,8 +14,8 @@
   <div class="nav-inner">
     <div class="nav-left">
       <a href="../index.html" class="nav-logo">
-        <img src="../assets/icon-tight.svg" alt="calle logo" class="logo-mark" width="20" height="18">
-        <span>calle<span class="dot">.</span>sh</span>
+        <img src="../assets/icon-tight.svg" alt="callhook logo" class="logo-mark" width="20" height="18">
+        <span>callhook</span>
       </a>
       <div class="nav-links">
         <a href="quickstart.html" class="active">Quickstart</a>
@@ -37,7 +37,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       </button>
 
-      <a class="nav-gh-link" href="https://github.com/iSundram/calle" target="_blank" rel="noopener" aria-label="GitHub Repository">
+      <a class="nav-gh-link" href="https://github.com/iSundram/callhook" target="_blank" rel="noopener" aria-label="GitHub Repository">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         <span>GitHub</span>
       </a>
@@ -54,8 +54,8 @@
 <aside class="mobile-drawer">
   <div class="drawer-header">
     <a href="../index.html" class="nav-logo">
-      <img src="../assets/icon-tight.svg" alt="calle logo" class="logo-mark" width="20" height="18">
-      <span>calle<span class="dot">.</span>sh</span>
+      <img src="../assets/icon-tight.svg" alt="callhook logo" class="logo-mark" width="20" height="18">
+      <span>callhook</span>
     </a>
     <button class="drawer-close" aria-label="Close menu">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -127,21 +127,21 @@
       <p>From zero to a working pipeline in 60 seconds — no API key, no phone calls, no balance.</p>
     </div>
 
-    <h2 id="run-calle">1. Run calle</h2>
+    <h2 id="run-callhook">1. Run callhook</h2>
     <p>Grab a release binary (Linux/macOS/Windows, amd64/arm64) or build from source:</p>
-    <pre><code><span class="cm"># from a release — https://github.com/iSundram/calle/releases</span>
-$ curl -L https://github.com/iSundram/calle/releases/latest/download/calle_linux_amd64.tar.gz | tar xz
-$ ./calle_linux_amd64/calle
+    <pre><code><span class="cm"># from a release — https://github.com/iSundram/callhook/releases</span>
+$ curl -L https://github.com/iSundram/callhook/releases/latest/download/callhook_linux_amd64.tar.gz | tar xz
+$ ./callhook_linux_amd64/callhook
 
 <span class="cm"># or from source</span>
-$ git clone https://github.com/iSundram/calle && cd calle
-$ <span class="hl">go run ./cmd/calle</span>
+$ git clone https://github.com/iSundram/callhook && cd callhook
+$ <span class="hl">go run ./cmd/callhook</span>
 
-CALLE_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
-calle dev listening on :8080 (dashboard: http://localhost:8080/)
+CALLHOOK_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
+callhook dev listening on :8080 (dashboard: http://localhost:8080/)
 supported events: invoice.due, account.warning, promo.offer
 retries: redial after 2h, up to 2 retries | windows: true</code></pre>
-    <p>No <code>CALLE_API_KEY</code>? calle runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
+    <p>No <code>CALLHOOK_API_KEY</code>? callhook runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
 
     <h2 id="watch-dashboard">2. Watch the dashboard</h2>
     <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>⚡ fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
@@ -151,11 +151,11 @@ retries: redial after 2h, up to 2 retries | windows: true</code></pre>
     <span class="st">"id"</span>:          <span class="st">"evt_001"</span>,
     <span class="st">"type"</span>:        <span class="st">"invoice.due"</span>,
     <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span>,
-    <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/calle"</span>
+    <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/callhook"</span>
   }'
 
 <span class="cm"># → {"status":"call_placed","session_id":"evt_001","call_id":"call_...","phone":"+14155550002"}</span></code></pre>
-    <p>The response returns immediately. When the call finishes, calle POSTs the structured outcome to your <code>callback_url</code>:</p>
+    <p>The response returns immediately. When the call finishes, callhook POSTs the structured outcome to your <code>callback_url</code>:</p>
     <pre><code>{
   <span class="st">"event_id"</span>:    <span class="st">"evt_001"</span>,
   <span class="st">"call_status"</span>: <span class="st">"completed"</span>,
@@ -166,10 +166,10 @@ retries: redial after 2h, up to 2 retries | windows: true</code></pre>
 }</code></pre>
 
     <h2 id="use-cli">4. Or use the CLI</h2>
-    <pre><code>$ go run ./cmd/callectl fire invoice.due cus_1002 <span class="kw">--not-before</span> 2026-09-07T14:00:00Z
-$ go run ./cmd/callectl batch events.json      <span class="cm"># fire many at once</span>
-$ go run ./cmd/callectl sessions <span class="kw">--watch</span>
-$ go run ./cmd/callectl metrics</code></pre>
+    <pre><code>$ go run ./cmd/callhookctl fire invoice.due cus_1002 <span class="kw">--not-before</span> 2026-09-07T14:00:00Z
+$ go run ./cmd/callhookctl batch events.json      <span class="cm"># fire many at once</span>
+$ go run ./cmd/callhookctl sessions <span class="kw">--watch</span>
+$ go run ./cmd/callhookctl metrics</code></pre>
 
     <h2 id="going-live">5. Going live</h2>
     <p>Dry-run proves the pipeline. For real phone calls, all you change is the environment — see <a href="production.html">Production</a>.</p>
@@ -190,7 +190,7 @@ $ go run ./cmd/callectl metrics</code></pre>
   <aside class="docs-toc">
     <div class="toc-title">On this page</div>
     <ul class="toc-list">
-      <li><a href="#run-calle" class="toc-link">1. Run calle</a></li>
+      <li><a href="#run-callhook" class="toc-link">1. Run callhook</a></li>
       <li><a href="#watch-dashboard" class="toc-link">2. Watch the dashboard</a></li>
       <li><a href="#fire-real-event" class="toc-link">3. Fire a real event</a></li>
       <li><a href="#use-cli" class="toc-link">4. Or use the CLI</a></li>
@@ -198,11 +198,11 @@ $ go run ./cmd/callectl metrics</code></pre>
     </ul>
 
     <div class="toc-utilities">
-      <a href="https://github.com/iSundram/calle/blob/main/docs-site/pages/quickstart.html" target="_blank" rel="noopener" class="toc-util-link">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/quickstart.html" target="_blank" rel="noopener" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         Edit on GitHub
       </a>
-      <a href="#run-calle" class="toc-util-link">
+      <a href="#run-callhook" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
         Back to top
       </a>
@@ -211,7 +211,7 @@ $ go run ./cmd/callectl metrics</code></pre>
 </div>
 
 <footer>
-  <p>calle — event-driven AI phone calls · MIT</p>
+  <p>callhook — event-driven AI phone calls · MIT</p>
 </footer>
 
 <script src="../js/main.js"></script>

@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iSundram/calle/internal/business"
-	"github.com/iSundram/calle/internal/calleclient"
-	"github.com/iSundram/calle/internal/events"
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/business"
+	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/events"
+	"github.com/iSundram/callhook/internal/session"
 )
 
 func newTestEngine() (*Engine, *session.Store) {
@@ -22,11 +22,11 @@ func placeCall(t *testing.T, sessions *session.Store, id string) {
 	sessions.SetCallID(id, "call_"+id)
 }
 
-func terminalEvent(callID, outcome string) *calleclient.WebhookEvent {
-	return &calleclient.WebhookEvent{
+func terminalEvent(callID, outcome string) *callhookclient.WebhookEvent {
+	return &callhookclient.WebhookEvent{
 		ID:   "wh_" + callID,
 		Type: "call.completed",
-		Data: calleclient.CallTask{
+		Data: callhookclient.CallTask{
 			ID: callID, Status: "completed",
 			StructuredResult: map[string]any{"outcome": outcome},
 		},

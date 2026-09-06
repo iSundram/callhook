@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/iSundram/calle/internal/business"
-	"github.com/iSundram/calle/internal/events"
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/business"
+	"github.com/iSundram/callhook/internal/events"
+	"github.com/iSundram/callhook/internal/session"
 )
 
 func TestJournalRoundTrip(t *testing.T) {

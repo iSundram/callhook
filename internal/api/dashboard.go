@@ -8,7 +8,7 @@ const dashboardHTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>calle — event → call → outcome</title>
+<title>callhook — event → call → outcome</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -46,7 +46,7 @@ const dashboardHTML = `<!doctype html>
 </style>
 </head>
 <body>
-<header><h1>calle</h1><span>event → intelligent call → structured outcome</span><span id="mode"></span></header>
+<header><h1>callhook</h1><span>event → intelligent call → structured outcome</span><span id="mode"></span></header>
 <div id="metrics"></div>
 <main>
   <div class="fire">
@@ -73,7 +73,7 @@ async function fire(type) {
     }),
   });
   const body = await res.json();
-  if (body.status) console.log('calle:', body.status, body.call_id || body.reason || '');
+  if (body.status) console.log('callhook:', body.status, body.call_id || body.reason || '');
   setTimeout(render, 400);
 }
 async function render() {

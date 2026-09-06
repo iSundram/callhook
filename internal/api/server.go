@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iSundram/calle/internal/business"
-	"github.com/iSundram/calle/internal/calleclient"
-	"github.com/iSundram/calle/internal/callwindow"
-	"github.com/iSundram/calle/internal/events"
-	"github.com/iSundram/calle/internal/outcome"
-	"github.com/iSundram/calle/internal/session"
+	"github.com/iSundram/callhook/internal/business"
+	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/callwindow"
+	"github.com/iSundram/callhook/internal/events"
+	"github.com/iSundram/callhook/internal/outcome"
+	"github.com/iSundram/callhook/internal/session"
 )
 
 // Server wires everything together: event intake, CALL-E client, outcome
@@ -24,15 +24,15 @@ type Server struct {
 	Router   *events.Router
 	Store    business.Store
 	Sessions *session.Store
-	Calle    *calleclient.Client
+	Calle    *callhookclient.Client
 	Outcomes *outcome.Engine
 	// PublicBaseURL is where CALL-E can reach our webhook (e.g. a tunnel URL).
 	PublicBaseURL string
 	// IntakeToken, when set, is required as "Authorization: Bearer <token>"
 	// on POST /api/events. Empty = open (development only).
 	IntakeToken string
-	// WebhookSecret, when set, is required as "X-Calle-Secret" on
-	// POST /calle/webhook so nobody can forge terminal results.
+	// WebhookSecret, when set, is required as "X-Callhook-Secret" on
+	// POST /callhook/webhook so nobody can forge terminal results.
 	WebhookSecret string
 	// EnforceWindows defers calls placed outside polite local hours.
 	EnforceWindows bool
@@ -45,7 +45,7 @@ func (s *Server) Routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/events", s.authIntake(s.limiter.wrap(s.handleEvent)))
 	mux.HandleFunc("POST /api/events/batch", s.authIntake(s.handleEventBatch))
-	mux.HandleFunc("POST /calle/webhook", s.authWebhook(s.handleCalleWebhook))
+	mux.HandleFunc("POST /callhook/webhook", s.authWebhook(s.handleCalleWebhook))
 	mux.HandleFunc("GET /api/sessions", s.handleSessions)
 	mux.HandleFunc("GET /api/metrics", s.handleMetrics)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
@@ -78,7 +78,7 @@ func (s *Server) authIntake(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) authWebhook(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.WebhookSecret != "" && r.Header.Get("X-Calle-Secret") != s.WebhookSecret {
+		if s.WebhookSecret != "" && r.Header.Get("X-Callhook-Secret") != s.WebhookSecret {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid webhook secret"})
 			return
 		}
@@ -86,7 +86,7 @@ func (s *Server) authWebhook(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// handleEvent is THE product: a business system POSTs an event, and calle
+// handleEvent is THE product: a business system POSTs an event, and callhook
 // takes over all phone communication for it.
 func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 	var ev events.Event
@@ -196,7 +196,7 @@ func (s *Server) processEvent(ev *events.Event) (int, map[string]any) {
 	call, placed, err := s.PlaceCall(sess)
 	if err != nil {
 		s.Sessions.Log(sess.ID, "call_failed", err.Error())
-		return http.StatusBadGateway, map[string]any{"error": "calle: " + err.Error()}
+		return http.StatusBadGateway, map[string]any{"error": "callhook: " + err.Error()}
 	}
 	if !placed {
 		return http.StatusAccepted, map[string]any{
@@ -214,7 +214,7 @@ func (s *Server) processEvent(ev *events.Event) (int, map[string]any) {
 // by the intake handler and the scheduler. Each attempt gets its own
 // idempotency key so a crash mid-retry never double-dials. Returns
 // placed=false when the call was deferred to the next open calling window.
-func (s *Server) PlaceCall(sess *session.Session) (*calleclient.CallTask, bool, error) {
+func (s *Server) PlaceCall(sess *session.Session) (*callhookclient.CallTask, bool, error) {
 	// Polite-hours gate: defer instead of dialing at night.
 	if s.EnforceWindows && !callwindow.IsOpen(sess.Region, sess.TZ, time.Now().UTC()) {
 		next := callwindow.NextOpen(sess.Region, sess.TZ, time.Now().UTC())
@@ -226,20 +226,20 @@ func (s *Server) PlaceCall(sess *session.Session) (*calleclient.CallTask, bool, 
 	attempt := sess.RetryCount + 1
 	idem := fmt.Sprintf("%s-a%d", sess.ID, attempt)
 
-	var call *calleclient.CallTask
+	var call *callhookclient.CallTask
 	var err error
 	if sess.GoalID != "" {
 		// Goals path: execute a published, versioned workflow with typed
 		// variables instead of a free-text task.
-		var run *calleclient.GoalRun
+		var run *callhookclient.GoalRun
 		run, err = s.Calle.CreateGoalCall(context.Background(), sess.GoalID, sess.Phone, sess.GoalVariables, idem)
 		if err == nil {
 			call = run.AsCallTask()
 		}
 	} else {
-		callReq := &calleclient.CreateCallRequest{
+		callReq := &callhookclient.CreateCallRequest{
 			Task: sess.Task,
-			Recipients: []calleclient.Recipient{{
+			Recipients: []callhookclient.Recipient{{
 				Phones: []string{sess.Phone},
 				Locale: sess.Locale,
 				Region: sess.Region,
@@ -253,7 +253,7 @@ func (s *Server) PlaceCall(sess *session.Session) (*calleclient.CallTask, bool, 
 			},
 		}
 		if s.PublicBaseURL != "" {
-			callReq.WebhookURL = strings.TrimSuffix(s.PublicBaseURL, "/") + "/calle/webhook"
+			callReq.WebhookURL = strings.TrimSuffix(s.PublicBaseURL, "/") + "/callhook/webhook"
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		call, err = s.Calle.CreateCall(ctx, callReq, idem)
@@ -274,7 +274,7 @@ func (s *Server) PlaceCall(sess *session.Session) (*calleclient.CallTask, bool, 
 
 // handleCalleWebhook receives terminal call results from CALL-E.
 func (s *Server) handleCalleWebhook(w http.ResponseWriter, r *http.Request) {
-	var ev calleclient.WebhookEvent
+	var ev callhookclient.WebhookEvent
 	if err := json.NewDecoder(r.Body).Decode(&ev); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
 		return
