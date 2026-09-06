@@ -63,6 +63,16 @@
   <span class="st">"retries_armed"</span>: 3
 }</code></pre>
 
+  <h2>GET /api/health</h2>
+  <p>Uptime probe — also the quickest way to check your configuration at a glance.</p>
+  <pre><code>{
+  <span class="st">"ok"</span>: true,
+  <span class="st">"dry_run"</span>: true,           <span class="cm">// no CALLE_API_KEY</span>
+  <span class="st">"windows_enforced"</span>: true,
+  <span class="st">"auth_intake"</span>: false,      <span class="cm">// CALLE_INTAKE_TOKEN unset</span>
+  <span class="st">"auth_webhook"</span>: false
+}</code></pre>
+
   <h2>Authentication</h2>
   <p>When <code>CALLE_INTAKE_TOKEN</code> is set, both intake endpoints require it:</p>
   <pre><code>Authorization: Bearer &lt;CALLE_INTAKE_TOKEN&gt;</code></pre>

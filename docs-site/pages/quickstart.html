@@ -29,7 +29,13 @@
   </div>
 
   <h2>1. Run calle</h2>
-  <pre><code>$ git clone https://github.com/iSundram/calle && cd calle
+  <p>Grab a release binary (Linux/macOS/Windows, amd64/arm64) or build from source:</p>
+  <pre><code><span class="cm"># from a release — https://github.com/iSundram/calle/releases</span>
+$ curl -L https://github.com/iSundram/calle/releases/latest/download/calle_linux_amd64.tar.gz | tar xz
+$ ./calle_linux_amd64/calle
+
+<span class="cm"># or from source</span>
+$ git clone https://github.com/iSundram/calle && cd calle
 $ <span class="hl">go run ./cmd/calle</span>
 
 CALLE_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
@@ -61,7 +67,8 @@ retries: redial after 2h, up to 2 retries | windows: true</code></pre>
 }</code></pre>
 
   <h2>4. Or use the CLI</h2>
-  <pre><code>$ go run ./cmd/callectl fire invoice.due cus_1002
+  <pre><code>$ go run ./cmd/callectl fire invoice.due cus_1002 <span class="kw">--not-before</span> 2026-09-07T14:00:00Z
+$ go run ./cmd/callectl batch events.json      <span class="cm"># fire many at once</span>
 $ go run ./cmd/callectl sessions <span class="kw">--watch</span>
 $ go run ./cmd/callectl metrics</code></pre>
 
