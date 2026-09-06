@@ -8,28 +8,158 @@
 </head>
 <body>
 
+<!-- Global Navigation -->
 <nav class="nav">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo">calle<span>.</span>sh</a>
-    <div class="nav-links">
-      <a href="quickstart.html">Quickstart</a>
-      <a href="api.html">API</a>
-      <a href="events.html">Events</a>
-      <a href="production.html">Production</a>
-      <a href="architecture.html">Architecture</a>
+    <div class="nav-left">
+      <a href="../index.html" class="nav-logo">
+        calle<span class="dot">.</span>sh
+        <span class="nav-version-badge">v0.1.0 · MIT</span>
+      </a>
+      <div class="nav-links">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="api.html">API</a>
+        <a href="events.html">Events</a>
+        <a href="production.html">Production</a>
+        <a href="architecture.html" class="active">Architecture</a>
+      </div>
     </div>
-    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+    
+    <div class="nav-right">
+      <button class="search-btn" aria-label="Search documentation">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>Search docs...</span>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+
+      <a class="nav-gh-link" href="https://github.com/iSundram/calle" target="_blank" rel="noopener" aria-label="GitHub Repository">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>github.com/iSundram/calle</span>
+      </a>
+
+      <button class="icon-btn mobile-toggle" aria-label="Open mobile menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
   </div>
 </nav>
 
-<div class="container">
-  <div class="page-header">
-    <h1>Architecture</h1>
-    <p>A single Go binary. Stdlib only. Every package owns one concern.</p>
+<!-- Mobile Navigation Drawer -->
+<div class="mobile-overlay"></div>
+<aside class="mobile-drawer">
+  <div class="drawer-header">
+    <a href="../index.html" class="nav-logo">calle<span class="dot">.</span>sh</a>
+    <button class="drawer-close" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
   </div>
+  <nav class="sidebar-nav">
+    <a href="../index.html">Home</a>
+    <a href="quickstart.html">Quickstart</a>
+    <a href="api.html">API Reference</a>
+    <a href="events.html">Event Types</a>
+    <a href="production.html">Production</a>
+    <a href="architecture.html" class="active">Architecture</a>
+  </nav>
+</aside>
 
-  <h2>The pipeline</h2>
-  <div class="pipeline">webhook in          <b>router</b>          <b>session</b>         <b>CALL-E</b>
+<!-- 3-Column Documentation Layout -->
+<div class="docs-shell">
+  <!-- Left Navigation Sidebar -->
+  <aside class="docs-sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Getting Started</div>
+      <nav class="sidebar-nav">
+        <a href="quickstart.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Quickstart
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Reference</div>
+      <nav class="sidebar-nav">
+        <a href="api.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          API Reference
+        </a>
+        <a href="events.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          Event Types
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Operations &amp; Deep Dives</div>
+      <nav class="sidebar-nav">
+        <a href="production.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Production
+        </a>
+        <a href="architecture.html" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Architecture
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Center Main Content -->
+  <main class="docs-main">
+    <div class="breadcrumbs">
+      <a href="../index.html">Docs</a>
+      <span class="sep">/</span>
+      <span>Architecture</span>
+    </div>
+
+    <div class="page-header">
+      <h1>Architecture</h1>
+      <p>A single Go binary. Stdlib only. Every package owns one concern.</p>
+    </div>
+
+    <h2 id="pipeline">The pipeline</h2>
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span>Pipeline Flow Diagram</span>
+        <button class="view-toggle-btn">Switch to Raw ASCII</button>
+      </div>
+
+      <!-- Modern Visual Pipeline -->
+      <div class="visual-pipeline-grid">
+        <div class="pipeline-node">
+          <div class="node-title">Webhook In</div>
+          <div class="node-desc">Router / Blueprint</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="connector-arrow"></div>
+          <span>Session Prefetch</span>
+        </div>
+        <div class="pipeline-node calle-core">
+          <div class="node-title">Task Composition</div>
+          <div class="node-desc">Deterministic Template</div>
+        </div>
+        <div class="pipeline-connector">
+          <div class="connector-arrow"></div>
+          <span>Place Call</span>
+        </div>
+        <div class="pipeline-node">
+          <div class="node-title">CALL-E &amp; Customer 📞</div>
+          <div class="node-desc">Outcome Webhook</div>
+        </div>
+      </div>
+
+      <div class="outcome-return-loop">
+        <span><b>Outcome Engine:</b> Policy Gate (Certain → Write · Uncertain → Escalate) | Retries (no_answer → Redial) | Audit Log</span>
+      </div>
+
+      <!-- Raw ASCII view preserved verbatim -->
+      <div class="pipeline pipeline-raw" style="display: none;">webhook in          <b>router</b>          <b>session</b>         <b>CALL-E</b>
 ─────────────►  event ─► blueprint ─► prefetch ─► task ─► place call ─► 📞
                                     │
                     outcome engine ◄─┴─ terminal webhook
@@ -38,53 +168,98 @@
                     ├─ retry policy: no_answer → redial · refusal → stop
                     ├─ audit log (every action, every trigger)
                     └─ outcome webhook → back to the business system</div>
+    </div>
 
-  <h2>Packages</h2>
-  <table>
-    <tr><th>Package</th><th>Owns</th></tr>
-    <tr><td><code>cmd/calle</code></td><td>Entrypoint, config, graceful shutdown</td></tr>
-    <tr><td><code>cmd/callectl</code></td><td>CLI client: fire, batch, sessions, metrics</td></tr>
-    <tr><td><code>internal/api</code></td><td>HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting, auth</td></tr>
-    <tr><td><code>internal/events</code></td><td>Event schema + router: event type → blueprint (task composer + result schema)</td></tr>
-    <tr><td><code>internal/business</code></td><td>The Store interface + mock — the surface you implement against your CRM</td></tr>
-    <tr><td><code>internal/calleclient</code></td><td>CALL-E Developer API client: calls + Goals + webhooks (their OpenAPI spec ships in <code>docs/</code>)</td></tr>
-    <tr><td><code>internal/session</code></td><td>Session registry, audit log, retry/schedule triggers</td></tr>
-    <tr><td><code>internal/outcome</code></td><td>Outcome engine: policy-gated writes, escalation, retry decisions, callback delivery</td></tr>
-    <tr><td><code>internal/retry</code></td><td>Scheduler: redials, calling-window deferrals, scheduled starts</td></tr>
-    <tr><td><code>internal/callwindow</code></td><td>Polite-hours gate: region → timezone, 9:00–20:00 weekdays</td></tr>
-    <tr><td><code>internal/store</code></td><td>Crash-safe JSONL journal persistence</td></tr>
-  </table>
+    <h2 id="packages">Packages</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Package</th><th>Owns</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>cmd/calle</code></td><td>Entrypoint, config, graceful shutdown</td></tr>
+          <tr><td><code>cmd/callectl</code></td><td>CLI client: fire, batch, sessions, metrics</td></tr>
+          <tr><td><code>internal/api</code></td><td>HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting, auth</td></tr>
+          <tr><td><code>internal/events</code></td><td>Event schema + router: event type → blueprint (task composer + result schema)</td></tr>
+          <tr><td><code>internal/business</code></td><td>The Store interface + mock — the surface you implement against your CRM</td></tr>
+          <tr><td><code>internal/calleclient</code></td><td>CALL-E Developer API client: calls + Goals + webhooks (their OpenAPI spec ships in <code>docs/</code>)</td></tr>
+          <tr><td><code>internal/session</code></td><td>Session registry, audit log, retry/schedule triggers</td></tr>
+          <tr><td><code>internal/outcome</code></td><td>Outcome engine: policy-gated writes, escalation, retry decisions, callback delivery</td></tr>
+          <tr><td><code>internal/retry</code></td><td>Scheduler: redials, calling-window deferrals, scheduled starts</td></tr>
+          <tr><td><code>internal/callwindow</code></td><td>Polite-hours gate: region → timezone, 9:00–20:00 weekdays</td></tr>
+          <tr><td><code>internal/store</code></td><td>Crash-safe JSONL journal persistence</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-  <h2>Design decisions</h2>
+    <h2 id="design-decisions">Design decisions</h2>
 
-  <h3>Read/write separation</h3>
-  <p>Prefetched context is <em>given</em> to the voice agent (customer data is baked into the task — the agent never asks for account numbers). Business writes happen only <em>after</em> the call, from the JSON-Schema-validated structured result — never from raw conversation. Every write is policy-gated and audit-logged.</p>
+    <h3 id="read-write-separation">Read/write separation</h3>
+    <p>Prefetched context is <em>given</em> to the voice agent (customer data is baked into the task — the agent never asks for account numbers). Business writes happen only <em>after</em> the call, from the JSON-Schema-validated structured result — never from raw conversation. Every write is policy-gated and audit-logged.</p>
 
-  <h3>No extra LLM — deliberately</h3>
-  <p>CALL-E's voice agent is the conversational brain. Task composition is deterministic templates, because a hallucinated amount or date spoken on a phone call is a real failure mode, and orchestration policy ("certain → write, uncertain → escalate") should be auditable code, not model output. calle doesn't reinvent the voice AI; it makes it pluggable into any business system.</p>
+    <h3 id="no-extra-llm">No extra LLM — deliberately</h3>
+    <p>CALL-E's voice agent is the conversational brain. Task composition is deterministic templates, because a hallucinated amount or date spoken on a phone call is a real failure mode, and orchestration policy ("certain → write, uncertain → escalate") should be auditable code, not model output. calle doesn't reinvent the voice AI; it makes it pluggable into any business system.</p>
 
-  <h3>Triggers, not timers</h3>
-  <p>Three deferred-trigger kinds share one scheduler: <code>retry</code> (no answer), <code>window</code> (polite hours), <code>scheduled</code> (caller-requested). Window and scheduled triggers never consume retry attempts — deferring a call is not the customer's fault.</p>
+    <h3 id="triggers-not-timers">Triggers, not timers</h3>
+    <p>Three deferred-trigger kinds share one scheduler: <code>retry</code> (no answer), <code>window</code> (polite hours), <code>scheduled</code> (caller-requested). Window and scheduled triggers never consume retry attempts — deferring a call is not the customer's fault.</p>
 
-  <h3>Goals API — the enterprise path</h3>
-  <p>Besides free-text call tasks, CALL-E publishes <strong>Goals</strong>: reusable, versioned call workflows with typed input and result schemas. calle supports both. A blueprint can pin <code>GoalID</code> (+ variables mapping) and that event type executes the pinned, schema-validated goal server-side. Free-text keeps calle zero-setup and fully generic; Goals give enterprises versioned, governed workflows. The client implements <code>ListGoals</code>, <code>CreateGoalRun</code>, <code>GetGoalRun</code>.</p>
+    <h3 id="goals-api">Goals API — the enterprise path</h3>
+    <p>Besides free-text call tasks, CALL-E publishes <strong>Goals</strong>: reusable, versioned call workflows with typed input and result schemas. calle supports both. A blueprint can pin <code>GoalID</code> (+ variables mapping) and that event type executes the pinned, schema-validated goal server-side. Free-text keeps calle zero-setup and fully generic; Goals give enterprises versioned, governed workflows. The client implements <code>ListGoals</code>, <code>CreateGoalRun</code>, <code>GetGoalRun</code>.</p>
 
-  <h3>What we deliberately did not build</h3>
-  <ul>
-    <li><strong>No telephony.</strong> IVR, voicemail, transfer, ~45 countries — CALL-E's job.</li>
-    <li><strong>No database.</strong> The JSONL journal is dependency-free and honest about hackathon scale; the session store is an interface when Postgres is warranted.</li>
-    <li><strong>No framework.</strong> stdlib <code>net/http</code>, stdlib JSON, zero external dependencies — nothing to go stale.</li>
-  </ul>
+    <h3 id="what-we-did-not-build">What we deliberately did not build</h3>
+    <ul>
+      <li><strong>No telephony.</strong> IVR, voicemail, transfer, ~45 countries — CALL-E's job.</li>
+      <li><strong>No database.</strong> The JSONL journal is dependency-free and honest about hackathon scale; the session store is an interface when Postgres is warranted.</li>
+      <li><strong>No framework.</strong> stdlib <code>net/http</code>, stdlib JSON, zero external dependencies — nothing to go stale.</li>
+    </ul>
 
-  <h2>Testing</h2>
-  <p>Unit suites cover the correctness-critical paths: calling-window timezone math (including weekend and evening rollover), journal replay (including torn-line tolerance after a crash), and the outcome policy ladder (promise writes, refusal never redials, blocked numbers never retried, exhaustion stops). CI runs the suite with <code>-race</code> on every push.</p>
+    <h2 id="testing">Testing</h2>
+    <p>Unit suites cover the correctness-critical paths: calling-window timezone math (including weekend and evening rollover), journal replay (including torn-line tolerance after a crash), and the outcome policy ladder (promise writes, refusal never redials, blocked numbers never retried, exhaustion stops). CI runs the suite with <code>-race</code> on every push.</p>
 
-  <div class="prevnext">
-    <a href="production.html">← Production</a>
-    <a href="../index.html">Home →</a>
-  </div>
+    <div class="prevnext">
+      <a href="production.html" class="prevnext-card">
+        <span class="direction">← Previous</span>
+        <span class="title">Production</span>
+      </a>
+      <a href="../index.html" class="prevnext-card next">
+        <span class="direction">Next →</span>
+        <span class="title">Home</span>
+      </a>
+    </div>
+  </main>
+
+  <!-- Right On This Page TOC -->
+  <aside class="docs-toc">
+    <div class="toc-title">On this page</div>
+    <ul class="toc-list">
+      <li><a href="#pipeline" class="toc-link">The pipeline</a></li>
+      <li><a href="#packages" class="toc-link">Packages</a></li>
+      <li><a href="#design-decisions" class="toc-link">Design decisions</a></li>
+      <li><a href="#read-write-separation" class="toc-link" style="padding-left: 16px;">• Read/write separation</a></li>
+      <li><a href="#no-extra-llm" class="toc-link" style="padding-left: 16px;">• No extra LLM</a></li>
+      <li><a href="#triggers-not-timers" class="toc-link" style="padding-left: 16px;">• Triggers, not timers</a></li>
+      <li><a href="#goals-api" class="toc-link" style="padding-left: 16px;">• Goals API</a></li>
+      <li><a href="#what-we-did-not-build" class="toc-link" style="padding-left: 16px;">• What we didn't build</a></li>
+      <li><a href="#testing" class="toc-link">Testing</a></li>
+    </ul>
+
+    <div class="toc-utilities">
+      <a href="https://github.com/iSundram/calle/blob/main/docs-site/pages/architecture.html" target="_blank" rel="noopener" class="toc-util-link">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Edit on GitHub
+      </a>
+      <a href="#pipeline" class="toc-util-link">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Back to top
+      </a>
+    </div>
+  </aside>
 </div>
 
-<footer>calle — event-driven AI phone calls · MIT</footer>
+<footer>
+  <p>calle — event-driven AI phone calls · MIT</p>
+</footer>
+
+<script src="../js/main.js"></script>
 </body>
 </html>
