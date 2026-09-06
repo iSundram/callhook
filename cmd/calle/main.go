@@ -4,15 +4,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/iSundram/calle/internal/api"
 	"github.com/iSundram/calle/internal/business"
 	"github.com/iSundram/calle/internal/calleclient"
 	"github.com/iSundram/calle/internal/events"
 	"github.com/iSundram/calle/internal/outcome"
+	"github.com/iSundram/calle/internal/retry"
 	"github.com/iSundram/calle/internal/session"
 )
 
@@ -28,11 +31,16 @@ func main() {
 		log.Printf("CALLE_API_KEY not set — running in DRY-RUN mode (no real calls placed)")
 	}
 
+	// Retry policy: redial after RetryDelay, at most session.MaxRetries times.
+	retryDelay := getdur("CALLE_RETRY_DELAY", 2*time.Hour)
+	retryTick := getdur("CALLE_RETRY_TICK", 15*time.Second)
+
 	store := business.NewMockStore()
 	sessions := session.NewStore()
 	client := calleclient.New(apiKey, baseURL)
 	client.DryRun = dryRun
 	outcomes := outcome.New(store, sessions)
+	outcomes.RetryDelay = retryDelay
 
 	srv := &api.Server{
 		Router:        events.NewRouter(),
@@ -43,9 +51,16 @@ func main() {
 		PublicBaseURL: publicURL,
 	}
 
+	// Retry scheduler: redials unanswered customers when their slot comes due.
+	sched := &retry.Scheduler{Sessions: sessions, Place: srv.PlaceCall, Tick: retryTick}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go sched.Run(ctx)
+
 	log.Printf("calle listening on %s (dashboard: http://localhost%s/)", addr, addr)
 	log.Printf("supported events: invoice.due, account.warning, promo.offer")
 	log.Printf("intake:  POST /api/events   webhook-in from CALL-E: POST /calle/webhook")
+	log.Printf("retries: redial after %s, up to %d retries", retryDelay, session.MaxRetries)
 	if err := http.ListenAndServe(addr, srv.Routes()); err != nil {
 		log.Fatal(err)
 	}
@@ -54,6 +69,16 @@ func main() {
 func getenv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return def
+}
+
+func getdur(key string, def time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
+		log.Printf("invalid %s — using default %s", key, def)
 	}
 	return def
 }

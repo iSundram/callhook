@@ -10,16 +10,23 @@ import (
 )
 
 // Session tracks one event's journey through the pipeline: received →
-// prefetched → calling → terminal → outcome applied.
+// prefetched → calling → terminal → outcome applied. Unanswered calls are
+// retried up to MaxRetries times.
 type Session struct {
 	ID          string
 	Event       events.Event
 	Customer    *business.Customer
 	Task        string
+	Phone       string
+	Locale      string
+	Region      string
+	ResultSchema map[string]any
 	CallID      string
 	CallStatus  string
 	Outcome     map[string]any
 	Actions     []Action
+	RetryCount  int
+	NextRetryAt *time.Time
 	LastUpdate  time.Time
 }
 
@@ -83,6 +90,74 @@ func (s *Store) FindByCallID(callID string) (*Session, bool) {
 	return nil, false
 }
 
+// SetCallTarget records who gets called and how.
+func (s *Store) SetCallTarget(id, phone, locale, region string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sess, ok := s.sessions[id]; ok {
+		sess.Phone, sess.Locale, sess.Region = phone, locale, region
+	}
+}
+
+// SetResultSchema stores the blueprint schema for retries.
+func (s *Store) SetResultSchema(id string, schema map[string]any) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sess, ok := s.sessions[id]; ok {
+		sess.ResultSchema = schema
+	}
+}
+
+// SetTask stores the composed task (used by retries).
+func (s *Store) SetTask(id, task string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sess, ok := s.sessions[id]; ok {
+		sess.Task = task
+	}
+}
+
+// RetryState returns the current retry count for a session.
+func (s *Store) RetryState(id string) int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if sess, ok := s.sessions[id]; ok {
+		return sess.RetryCount
+	}
+	return -1
+}
+
+// ScheduleRetry arms a retry: mark next attempt time if attempts remain.
+func (s *Store) ScheduleRetry(id string, at time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sess, ok := s.sessions[id]; ok && sess.RetryCount < MaxRetries {
+		sess.NextRetryAt = &at
+		return true
+	}
+	return false
+}
+
+// PopDueRetries returns sessions whose retry time has arrived, clears their
+// timer, and advances their attempt counter. Callers place the new call.
+func (s *Store) PopDueRetries(now time.Time) []*Session {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var due []*Session
+	for _, sess := range s.sessions {
+		if sess.NextRetryAt != nil && !sess.NextRetryAt.After(now) && sess.RetryCount < MaxRetries {
+			sess.NextRetryAt = nil
+			sess.RetryCount++
+			cp := *sess
+			due = append(due, &cp)
+		}
+	}
+	return due
+}
+
+// MaxRetries is the number of redials after the first attempt.
+const MaxRetries = 2
+
 // Log appends an audit action to a session.
 func (s *Store) Log(id, kind, detail string) {
 	s.mu.Lock()
@@ -136,12 +211,14 @@ func (s *Store) Snapshot() []SessionView {
 			EventType:  sess.Event.Type,
 			CustomerID: sess.Event.CustomerID,
 			Customer:   derefName(sess.Customer),
-			Phone:      sess.Event.Phone,
+			Phone:      sess.Phone,
 			CallID:     sess.CallID,
 			CallStatus: sess.CallStatus,
 			Outcome:    sess.Outcome,
 			Actions:    sess.Actions,
 			Task:       sess.Task,
+			RetryCount: sess.RetryCount,
+			NextRetryAt: sess.NextRetryAt,
 			UpdatedAt:  sess.LastUpdate,
 		})
 	}
@@ -178,5 +255,7 @@ type SessionView struct {
 	Outcome    map[string]any        `json:"outcome"`
 	Actions    []Action              `json:"actions"`
 	Task       string                `json:"task"`
+	RetryCount int                   `json:"retry_count"`
+	NextRetryAt *time.Time           `json:"next_retry_at"`
 	UpdatedAt  time.Time             `json:"updated_at"`
 }

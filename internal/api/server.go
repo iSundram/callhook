@@ -99,36 +99,16 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 	sess := s.Sessions.Create(ev.ID, ev, customer)
 	s.Sessions.Log(sess.ID, "event_received", ev.Type+" for "+customer.Name)
 	s.Sessions.Log(sess.ID, "prefetched", "customer="+customer.ID+" invoice/payment history loaded")
+	s.Sessions.SetCallTarget(sess.ID, phone, customer.Locale, customer.Region)
+	s.Sessions.SetResultSchema(sess.ID, blueprint.ResultSchema)
+	s.Sessions.SetTask(sess.ID, task)
 
-	// Place the call via CALL-E.
-	callReq := &calleclient.CreateCallRequest{
-		Task: task,
-		Recipients: []calleclient.Recipient{{
-			Phones: []string{phone},
-			Locale: customer.Locale,
-			Region: customer.Region,
-		}},
-		ResultSchema: blueprint.ResultSchema,
-		Metadata: map[string]any{
-			"event_id":    ev.ID,
-			"event_type":  ev.Type,
-			"customer_id": ev.CustomerID,
-		},
-	}
-	if s.PublicBaseURL != "" {
-		callReq.WebhookURL = strings.TrimSuffix(s.PublicBaseURL, "/") + "/calle/webhook"
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-	call, err := s.Calle.CreateCall(ctx, callReq, key)
+	call, err := s.PlaceCall(sess)
 	if err != nil {
 		s.Sessions.Log(sess.ID, "call_failed", err.Error())
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "calle: " + err.Error()})
 		return
 	}
-	s.Sessions.SetCall(sess.ID, call)
-	s.Sessions.Log(sess.ID, "call_placed", call.ID+" → "+phone)
 
 	writeJSON(w, http.StatusAccepted, map[string]any{
 		"status":     "call_placed",
@@ -137,6 +117,45 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		"phone":      phone,
 		"dry_run":    s.Calle.DryRun,
 	})
+}
+
+// PlaceCall places (or re-places, on retry) the call for a session. Shared
+// by the intake handler and the retry scheduler. Each attempt gets its own
+// idempotency key so a crash mid-retry never double-dials.
+func (s *Server) PlaceCall(sess *session.Session) (*calleclient.CallTask, error) {
+	attempt := sess.RetryCount + 1
+	callReq := &calleclient.CreateCallRequest{
+		Task: sess.Task,
+		Recipients: []calleclient.Recipient{{
+			Phones: []string{sess.Phone},
+			Locale: sess.Locale,
+			Region: sess.Region,
+		}},
+		ResultSchema: sess.ResultSchema,
+		Metadata: map[string]any{
+			"event_id":    sess.Event.ID,
+			"event_type":  sess.Event.Type,
+			"customer_id": sess.Event.CustomerID,
+			"attempt":     attempt,
+		},
+	}
+	if s.PublicBaseURL != "" {
+		callReq.WebhookURL = strings.TrimSuffix(s.PublicBaseURL, "/") + "/calle/webhook"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	call, err := s.Calle.CreateCall(ctx, callReq, fmt.Sprintf("%s-a%d", sess.ID, attempt))
+	if err != nil {
+		return nil, err
+	}
+	s.Sessions.SetCall(sess.ID, call)
+	if attempt > 1 {
+		s.Sessions.Log(sess.ID, "call_placed", fmt.Sprintf("%s → %s (retry attempt %d/%d)", call.ID, sess.Phone, attempt, session.MaxRetries+1))
+	} else {
+		s.Sessions.Log(sess.ID, "call_placed", call.ID+" → "+sess.Phone)
+	}
+	return call, nil
 }
 
 // handleCalleWebhook receives terminal call results from CALL-E.

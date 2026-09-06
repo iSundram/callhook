@@ -6,6 +6,7 @@ package outcome
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -13,19 +14,19 @@ import (
 	"github.com/iSundram/calle/internal/business"
 	"github.com/iSundram/calle/internal/calleclient"
 	"github.com/iSundram/calle/internal/session"
-)
-
-// Engine applies outcomes. Writes are policy-gated: confident, unambiguous
+)// Engine applies outcomes. Writes are policy-gated: confident, unambiguous
 // results write to the business store; anything uncertain escalates to a
 // human instead of acting.
 type Engine struct {
 	Store    business.Store
 	Sessions *session.Store
 	Client   *http.Client
+	// RetryDelay is how long to wait before redialing an unanswered customer.
+	RetryDelay time.Duration
 }
 
 func New(st business.Store, sessions *session.Store) *Engine {
-	return &Engine{Store: st, Sessions: sessions, Client: &http.Client{Timeout: 10 * time.Second}}
+	return &Engine{Store: st, Sessions: sessions, Client: &http.Client{Timeout: 10 * time.Second}, RetryDelay: 2 * time.Hour}
 }
 
 // Apply processes one terminal webhook event from CALL-E.
@@ -79,10 +80,30 @@ func (e *Engine) Apply(ev *calleclient.WebhookEvent) {
 		e.Sessions.Log(sess.ID, "action", a)
 	}
 
+	// Retry policy: unanswered customers get redialed (up to session
+	// MaxRetries). Explicit refusals and completed business outcomes are
+	// terminal — never redial someone who answered and said no.
+	if e.retryable(ev, outcomeVal, sess.ID) {
+		at := time.Now().UTC().Add(e.RetryDelay)
+		if e.Sessions.ScheduleRetry(sess.ID, at) {
+			attempts := e.Sessions.RetryState(sess.ID) + 1
+			e.Sessions.Log(sess.ID, "retry_scheduled", fmt.Sprintf("no answer — redial %s (attempt %d/%d)", e.RetryDelay, attempts+1, session.MaxRetries+1))
+		} else {
+			e.Sessions.Log(sess.ID, "retry_exhausted", "no answer on final attempt — leaving outcome as no_answer")
+		}
+	}
+
 	// Close the loop: POST the structured outcome back to the business.
 	if sess.Event.CallbackURL != "" {
 		e.postBack(sess, ev, actions)
 	}
+}
+
+func (e *Engine) retryable(ev *calleclient.WebhookEvent, outcomeVal, sessID string) bool {
+	if outcomeVal != "no_answer" && ev.Data.Status != "failed" {
+		return false
+	}
+	return e.Sessions.RetryState(sessID) < session.MaxRetries
 }
 
 func (e *Engine) postBack(sess *session.Session, ev *calleclient.WebhookEvent, actions []string) {
