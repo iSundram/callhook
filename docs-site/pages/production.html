@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production — calle</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">calle<span>.</span>sh</a>
+    <div class="nav-links">
+      <a href="quickstart.html">Quickstart</a>
+      <a href="api.html">API</a>
+      <a href="events.html">Events</a>
+      <a href="production.html">Production</a>
+      <a href="architecture.html">Architecture</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Production</h1>
+    <p>Dry-run to live calls is a pure environment change. Same binary, same code, same tests.</p>
+  </div>
+
+  <h2>1. API key</h2>
+  <pre><code>export <span class="kw">CALLE_API_KEY</span>=iams_live_...</code></pre>
+  <p>Without it calle fabricates results locally (dry-run). With it, every call is real and bills your CALL-E balance. There is no other switch.</p>
+
+  <h2>2. Public webhook via tunnel</h2>
+  <p>CALL-E POSTs terminal results to <code>/calle/webhook</code> — it needs to reach you.</p>
+  <pre><code>$ cloudflared tunnel --url http://localhost:8080
+<span class="cm"># or: ngrok http 8080</span>
+
+export <span class="kw">CALLE_PUBLIC_URL</span>=https://your-tunnel.example.com</code></pre>
+  <p>calle automatically sets <code>webhook_url</code> on every call it creates.</p>
+
+  <h2>3. Lock it down (required on any public URL)</h2>
+  <pre><code>export <span class="kw">CALLE_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># POST /api/events requires: Authorization: Bearer &lt;token&gt;</span>
+export <span class="kw">CALLE_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class="cm"># POST /calle/webhook requires: X-Calle-Secret: &lt;secret&gt;</span></code></pre>
+  <p>Rate limiting (60 events/min per source) is built in.</p>
+
+  <h2>4. Persistence</h2>
+  <pre><code>export <span class="kw">CALLE_JOURNAL</span>=/var/lib/calle/sessions.jsonl</code></pre>
+  <p>An append-only JSONL journal. On boot, calle replays it: sessions, armed retries, schedules and dedup keys all survive restarts — a crash mid-retry-cycle never silently drops or double-dials a customer.</p>
+
+  <h2>Configuration reference</h2>
+  <table>
+    <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>CALLE_API_KEY</code></td><td>—</td><td>CALL-E API key. Empty = dry-run mode.</td></tr>
+    <tr><td><code>CALLE_API_BASE</code></td><td><code>https://api.heycall-e.com</code></td><td>API base override (e.g. a proxy).</td></tr>
+    <tr><td><code>CALLE_PUBLIC_URL</code></td><td>—</td><td>Public URL CALL-E uses to deliver terminal webhooks.</td></tr>
+    <tr><td><code>CALLE_ADDR</code></td><td><code>:8080</code></td><td>HTTP listen address.</td></tr>
+    <tr><td><code>CALLE_INTAKE_TOKEN</code></td><td>—</td><td>Bearer token for event intake.</td></tr>
+    <tr><td><code>CALLE_WEBHOOK_SECRET</code></td><td>—</td><td>Shared secret for the CALL-E webhook.</td></tr>
+    <tr><td><code>CALLE_JOURNAL</code></td><td><code>data/sessions.jsonl</code></td><td>Session journal path.</td></tr>
+    <tr><td><code>CALLE_ENFORCE_WINDOWS</code></td><td><code>true</code></td><td>Defer calls outside polite local hours.</td></tr>
+    <tr><td><code>CALLE_RETRY_DELAY</code></td><td><code>2h</code></td><td>Redial delay after <code>no_answer</code>.</td></tr>
+    <tr><td><code>CALLE_RETRY_TICK</code></td><td><code>15s</code></td><td>Scheduler poll interval.</td></tr>
+  </table>
+
+  <h2>Calling behavior defaults</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Polite hours</h3>
+      <p>9:00–20:00 recipient-local, weekdays only. Per-region timezone map; override per event with <code>tz</code>. Deferrals never consume retry attempts.</p>
+    </div>
+    <div class="card">
+      <h3>Retry ladder</h3>
+      <p><code>no_answer</code> and transient failures redial up to 2 times. Blocked, invalid, and out-of-region numbers are never redialed. Refusals are terminal — answered-and-said-no is final.</p>
+    </div>
+    <div class="card">
+      <h3>One attempt = one idempotency key</h3>
+      <p>Each dial attempt gets its own key at CALL-E — a crash between "redial armed" and "redial placed" can never produce two calls.</p>
+    </div>
+  </div>
+
+  <h2>Connecting real business data</h2>
+  <p>The demo ships a mock store. Production implements one interface — <span class="mono">business.Store</span>: <code>GetCustomer</code>, <code>GetOpenInvoice</code>, <code>MarkPromise</code>, <code>Escalate</code>, <code>RecordContact</code> — against your CRM or billing system. Read tools feed the call context; writes land only from structured outcomes, policy-gated and audit-logged.</p>
+
+  <div class="prevnext">
+    <a href="events.html">← Events</a>
+    <a href="architecture.html">Architecture →</a>
+  </div>
+</div>
+
+<footer>calle — event-driven AI phone calls · MIT</footer>
+</body>
+</html>

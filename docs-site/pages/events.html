@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Types — calle</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">calle<span>.</span>sh</a>
+    <div class="nav-links">
+      <a href="quickstart.html">Quickstart</a>
+      <a href="api.html">API</a>
+      <a href="events.html">Events</a>
+      <a href="production.html">Production</a>
+      <a href="architecture.html">Architecture</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Event Types</h1>
+    <p>Each event type is a blueprint: how the call task is composed, what the agent knows, and what outcome schema comes back. Three ship built-in; new ones are ~60 lines.</p>
+  </div>
+
+  <h2>invoice.due</h2>
+  <p>The overdue-invoice chase, done politely. The agent knows the amount, due date, days overdue, and last payment before dialing — so "I already paid last week" is handled with grace, not an argument.</p>
+  <table>
+    <tr><th>Outcome</th><th>Meaning</th><th>Auto-action</th></tr>
+    <tr><td><code>payment_promised</code></td><td>A payment date was agreed (+ <code>promise_date</code>)</td><td><code>write.mark_promise</code></td></tr>
+    <tr><td><code>claims_already_paid</code></td><td>Customer says it's paid</td><td><code>escalate.billing_review</code></td></tr>
+    <tr><td><code>disputed</code></td><td>Charge contested</td><td><code>escalate.billing_review</code></td></tr>
+    <tr><td><code>callback_requested</code></td><td>Wants a human</td><td><code>escalate.human_callback</code></td></tr>
+    <tr><td><code>refused</code></td><td>Declines without a date</td><td>— (never redialed)</td></tr>
+    <tr><td><code>no_answer</code></td><td>Unreachable</td><td>Redial up to 2×</td></tr>
+  </table>
+
+  <h2>account.warning</h2>
+  <p>An urgent-but-calm security notice. The agent never asks for passwords, PINs, or codes — and says so in its instructions. If the customer doesn't recognize the activity, the agent advises that a reset link was emailed and offers a security-team callback.</p>
+  <table>
+    <tr><th>Outcome</th><th>Meaning</th><th>Auto-action</th></tr>
+    <tr><td><code>acknowledged</code></td><td>Notice received</td><td>—</td></tr>
+    <tr><td><code>activity_confirmed_legitimate</code></td><td>"That was me"</td><td>—</td></tr>
+    <tr><td><code>needs_human</code></td><td>Worried; wants the security team</td><td><code>escalate.human_callback</code></td></tr>
+    <tr><td><code>no_answer</code></td><td>Unreachable</td><td>Redial up to 2×</td></tr>
+  </table>
+  <p>Payload: <code>{"reason": "login from a new country", "detail": "A sign-in from Singapore was detected."}</code></p>
+
+  <h2>promo.offer</h2>
+  <p>A loyalty offer delivered by voice — warmer than SMS, and the agent answers questions in real time. Under a minute if they're not interested; a hard rule forbids pushing twice.</p>
+  <table>
+    <tr><th>Outcome</th><th>Meaning</th><th>Auto-action</th></tr>
+    <tr><td><code>accepted</code></td><td>Took the offer</td><td>—</td></tr>
+    <tr><td><code>declined</code></td><td>Said no</td><td>— (never redialed)</td></tr>
+    <tr><td><code>callback_requested</code></td><td>Wants to decide later with a human</td><td><code>escalate.human_callback</code></td></tr>
+    <tr><td><code>no_answer</code></td><td>Unreachable</td><td>Redial up to 2×</td></tr>
+  </table>
+  <p>Payload: <code>{"offer": "20% off your next invoice", "expires": "end of this week"}</code></p>
+
+  <h2>Adding your own</h2>
+  <p>A blueprint lives in <span class="mono">internal/events/router.go</span> and has exactly two required parts:</p>
+  <pre><code><span class="st">"delivery.window"</span>: {
+    Compose: func(c, e, s) (string, error) {
+        <span class="cm">// build the call task with prefetched business data</span>
+    },
+    ResultSchema: map[string]any{
+        <span class="cm">// JSON Schema — CALL-E extracts this from call evidence</span>
+    },
+},</code></pre>
+  <p>Intake, routing, scheduling, retries, windows, persistence, outcome actions, dashboard — all of it is generic. The blueprint is the only project-specific code.</p>
+
+  <div class="callout">
+    <b>Goals API:</b> an event type can instead pin to a published, versioned CALL-E Goal (<code>GoalID</code> + <code>Variables</code>) for stricter governance. See <a href="architecture.html">Architecture → Goals</a>.
+  </div>
+
+  <div class="prevnext">
+    <a href="api.html">← API</a>
+    <a href="production.html">Production →</a>
+  </div>
+</div>
+
+<footer>calle — event-driven AI phone calls · MIT</footer>
+</body>
+</html>

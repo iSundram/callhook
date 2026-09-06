@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="calle — event-driven AI phone calls. Webhook in → intelligent CALL-E call → structured outcome back. The voice channel as an API.">
+  <title>calle — Event-driven AI phone calls</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">calle<span>.</span>sh</a>
+    <div class="nav-links">
+      <a href="pages/quickstart.html">Quickstart</a>
+      <a href="pages/api.html">API</a>
+      <a href="pages/events.html">Events</a>
+      <a href="pages/production.html">Production</a>
+      <a href="pages/architecture.html">Architecture</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero">
+    <h1>The voice channel, <span>as an API.</span></h1>
+    <p class="tagline">Your system fires a webhook. calle places an intelligent phone call via <a href="https://heycall-e.com" target="_blank" rel="noopener">CALL-E</a>, handles the conversation with full customer context, and POSTs a structured outcome back.</p>
+    <div class="hero-badges">
+      <span class="badge"><b>Go</b> single binary</span>
+      <span class="badge"><b>0</b> dependencies</span>
+      <span class="badge">self-hosted</span>
+      <span class="badge">MIT</span>
+    </div>
+    <div class="cta-row">
+      <a class="cta primary" href="pages/quickstart.html">Get started →</a>
+      <a class="cta ghost" href="https://github.com/iSundram/calle">GitHub</a>
+    </div>
+  </div>
+
+  <h2>How it works</h2>
+  <div class="pipeline">business app ──<b>POST /api/events</b>──►  calle  ──<b>CALL-E API</b>──►  📞 customer
+      ▲                               │
+      └────── outcome webhook ◄───────┘
+            {outcome, promise_date, actions, transcript, confidence}</div>
+
+  <h2>Not a robocall. Not another LLM.</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Context before dialing</h3>
+      <p>The customer's plan, invoice, and payment history are prefetched and baked into the call — the agent never wastes seconds asking for account details.</p>
+    </div>
+    <div class="card">
+      <h3>Thinks during the call</h3>
+      <p>When the customer says "I already paid," the agent acknowledges and flags the account for review instead of arguing. CALL-E's voice brain handles it.</p>
+    </div>
+    <div class="card">
+      <h3>Structured outcomes only</h3>
+      <p>Results arrive as JSON-Schema-validated objects — <code>payment_promised</code>, <code>promise_date</code>, confidence — never free text you have to parse.</p>
+    </div>
+    <div class="card">
+      <h3>Policy-gated actions</h3>
+      <p>Unambiguous outcomes write to your business store; uncertain ones escalate to a human. Every action is audit-logged. Deterministic code, not model vibes.</p>
+    </div>
+  </div>
+
+  <h2>Operational guarantees</h2>
+  <table>
+    <tr><th>Guarantee</th><th>How</th></tr>
+    <tr><td>Never double-dial</td><td>Per-attempt idempotency keys + event dedup persisted across restarts</td></tr>
+    <tr><td>Crash-safe</td><td>Append-only JSONL journal; sessions, armed retries and schedules replay on boot</td></tr>
+    <tr><td>Polite hours</td><td>Calls deferred to 9:00–20:00 recipient-local, weekdays, per-region timezone</td></tr>
+    <tr><td>Courtesy retries</td><td><code>no_answer</code> redials up to 2×; refusals and blocked numbers never redialed</td></tr>
+    <tr><td>Scheduled calls</td><td><code>not_before</code> on any event parks it until the requested time</td></tr>
+    <tr><td>Not forgeable</td><td>Bearer-token intake + shared-secret webhook (set both on a public tunnel)</td></tr>
+  </table>
+
+  <h2>Fire your first event</h2>
+  <pre><code><span class="cm"># start calle (dry-run: no API key, no real calls, no balance)</span>
+$ <span class="hl">go run ./cmd/calle</span>
+calle listening on :8080 (dashboard: http://localhost:8080/)
+
+<span class="cm"># any business system:</span>
+$ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{
+    <span class="st">"id"</span>: <span class="st">"evt_001"</span>,
+    <span class="st">"type"</span>: <span class="st">"invoice.due"</span>,
+    <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span>,
+    <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/calle"</span>
+  }'
+
+<span class="cm"># → {"status":"call_placed","call_id":"call_..."}</span>
+<span class="cm"># → outcome lands on your callback URL when the call finishes</span></code></pre>
+
+  <div class="callout">
+    <b>Why "calle"?</b> It speaks CALL-E's name — and <i>calle</i> is Spanish for "street": the street between your system and your customer's phone.
+  </div>
+</div>
+
+<footer>calle — event-driven AI phone calls · MIT · built for the CALL-E hackathon</footer>
+</body>
+</html>

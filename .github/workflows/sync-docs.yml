@@ -1,0 +1,55 @@
+name: sync-docs
+
+# Syncs docs-site/ to the calle-sh.github.io repo whenever docs change.
+# Uses a fine-grained PAT stored as DOCS_TOKEN (see README or repo secrets):
+#   Resource owner:  calle-sh
+#   Repository access: only calle-sh/calle-sh.github.io
+#   Permissions:     Contents: Read and write
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs-site/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Push to docs repo
+        env:
+          DOCS_TOKEN: ${{ secrets.DOCS_TOKEN }}
+        run: |
+          if [ -z "$DOCS_TOKEN" ]; then
+            echo "::warning::DOCS_TOKEN secret not set — skipping docs sync."
+            echo "Add a fine-grained PAT (owner: calle-sh, repo: calle-sh.github.io, Contents: RW) as the DOCS_TOKEN repo secret."
+            exit 0
+          fi
+
+          git config --global user.email "deploy@calle-sh.github.io"
+          git config --global user.name "calle Docs Bot"
+
+          # Clone the docs repo (any default branch name works)
+          git clone --depth 1 \
+            "https://x-access-token:${DOCS_TOKEN}@github.com/calle-sh/calle-sh.github.io.git" \
+            /tmp/docs-repo || {
+              echo "docs repo not reachable — create calle-sh/calle-sh.github.io first"; exit 1; }
+
+          # Sync docs-site content over it
+          cd /tmp/docs-repo
+          git rm -rf --quiet . 2>/dev/null || true
+          cp -r "$GITHUB_WORKSPACE/docs-site/"* .
+          touch .nojekyll
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No docs changes."
+            exit 0
+          fi
+          git commit -m "docs: sync from iSundram/calle $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Push to whatever branch HEAD tracks; fall back to main
+          git push origin "HEAD:$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's|origin/||' || echo main)"
+          echo "Deployed to https://calle-sh.github.io"

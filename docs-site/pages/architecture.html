@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture — calle</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">calle<span>.</span>sh</a>
+    <div class="nav-links">
+      <a href="quickstart.html">Quickstart</a>
+      <a href="api.html">API</a>
+      <a href="events.html">Events</a>
+      <a href="production.html">Production</a>
+      <a href="architecture.html">Architecture</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Architecture</h1>
+    <p>A single Go binary. Stdlib only. Every package owns one concern.</p>
+  </div>
+
+  <h2>The pipeline</h2>
+  <div class="pipeline">webhook in          <b>router</b>          <b>session</b>         <b>CALL-E</b>
+─────────────►  event ─► blueprint ─► prefetch ─► task ─► place call ─► 📞
+                                    │
+                    outcome engine ◄─┴─ terminal webhook
+                    │
+                    ├─ policy gate: certain → write · uncertain → escalate
+                    ├─ retry policy: no_answer → redial · refusal → stop
+                    ├─ audit log (every action, every trigger)
+                    └─ outcome webhook → back to the business system</div>
+
+  <h2>Packages</h2>
+  <table>
+    <tr><th>Package</th><th>Owns</th></tr>
+    <tr><td><code>cmd/calle</code></td><td>Entrypoint, config, graceful shutdown</td></tr>
+    <tr><td><code>cmd/callectl</code></td><td>CLI client: fire, batch, sessions, metrics</td></tr>
+    <tr><td><code>internal/api</code></td><td>HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting, auth</td></tr>
+    <tr><td><code>internal/events</code></td><td>Event schema + router: event type → blueprint (task composer + result schema)</td></tr>
+    <tr><td><code>internal/business</code></td><td>The Store interface + mock — the surface you implement against your CRM</td></tr>
+    <tr><td><code>internal/calleclient</code></td><td>CALL-E Developer API client: calls + Goals + webhooks (their OpenAPI spec ships in <code>docs/</code>)</td></tr>
+    <tr><td><code>internal/session</code></td><td>Session registry, audit log, retry/schedule triggers</td></tr>
+    <tr><td><code>internal/outcome</code></td><td>Outcome engine: policy-gated writes, escalation, retry decisions, callback delivery</td></tr>
+    <tr><td><code>internal/retry</code></td><td>Scheduler: redials, calling-window deferrals, scheduled starts</td></tr>
+    <tr><td><code>internal/callwindow</code></td><td>Polite-hours gate: region → timezone, 9:00–20:00 weekdays</td></tr>
+    <tr><td><code>internal/store</code></td><td>Crash-safe JSONL journal persistence</td></tr>
+  </table>
+
+  <h2>Design decisions</h2>
+
+  <h3>Read/write separation</h3>
+  <p>Prefetched context is <em>given</em> to the voice agent (customer data is baked into the task — the agent never asks for account numbers). Business writes happen only <em>after</em> the call, from the JSON-Schema-validated structured result — never from raw conversation. Every write is policy-gated and audit-logged.</p>
+
+  <h3>No extra LLM — deliberately</h3>
+  <p>CALL-E's voice agent is the conversational brain. Task composition is deterministic templates, because a hallucinated amount or date spoken on a phone call is a real failure mode, and orchestration policy ("certain → write, uncertain → escalate") should be auditable code, not model output. calle doesn't reinvent the voice AI; it makes it pluggable into any business system.</p>
+
+  <h3>Triggers, not timers</h3>
+  <p>Three deferred-trigger kinds share one scheduler: <code>retry</code> (no answer), <code>window</code> (polite hours), <code>scheduled</code> (caller-requested). Window and scheduled triggers never consume retry attempts — deferring a call is not the customer's fault.</p>
+
+  <h3>Goals API — the enterprise path</h3>
+  <p>Besides free-text call tasks, CALL-E publishes <strong>Goals</strong>: reusable, versioned call workflows with typed input and result schemas. calle supports both. A blueprint can pin <code>GoalID</code> (+ variables mapping) and that event type executes the pinned, schema-validated goal server-side. Free-text keeps calle zero-setup and fully generic; Goals give enterprises versioned, governed workflows. The client implements <code>ListGoals</code>, <code>CreateGoalRun</code>, <code>GetGoalRun</code>.</p>
+
+  <h3>What we deliberately did not build</h3>
+  <ul>
+    <li><strong>No telephony.</strong> IVR, voicemail, transfer, ~45 countries — CALL-E's job.</li>
+    <li><strong>No database.</strong> The JSONL journal is dependency-free and honest about hackathon scale; the session store is an interface when Postgres is warranted.</li>
+    <li><strong>No framework.</strong> stdlib <code>net/http</code>, stdlib JSON, zero external dependencies — nothing to go stale.</li>
+  </ul>
+
+  <h2>Testing</h2>
+  <p>Unit suites cover the correctness-critical paths: calling-window timezone math (including weekend and evening rollover), journal replay (including torn-line tolerance after a crash), and the outcome policy ladder (promise writes, refusal never redials, blocked numbers never retried, exhaustion stops). CI runs the suite with <code>-race</code> on every push.</p>
+
+  <div class="prevnext">
+    <a href="production.html">← Production</a>
+    <a href="../index.html">Home →</a>
+  </div>
+</div>
+
+<footer>calle — event-driven AI phone calls · MIT</footer>
+</body>
+</html>

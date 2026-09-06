@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quickstart — calle</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">calle<span>.</span>sh</a>
+    <div class="nav-links">
+      <a href="quickstart.html">Quickstart</a>
+      <a href="api.html">API</a>
+      <a href="events.html">Events</a>
+      <a href="production.html">Production</a>
+      <a href="architecture.html">Architecture</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/iSundram/calle">github.com/iSundram/calle</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Quickstart</h1>
+    <p>From zero to a working pipeline in 60 seconds — no API key, no phone calls, no balance.</p>
+  </div>
+
+  <h2>1. Run calle</h2>
+  <pre><code>$ git clone https://github.com/iSundram/calle && cd calle
+$ <span class="hl">go run ./cmd/calle</span>
+
+CALLE_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
+calle dev listening on :8080 (dashboard: http://localhost:8080/)
+supported events: invoice.due, account.warning, promo.offer
+retries: redial after 2h, up to 2 retries | windows: true</code></pre>
+  <p>No <code>CALLE_API_KEY</code>? calle runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
+
+  <h2>2. Watch the dashboard</h2>
+  <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>⚡ fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
+
+  <h2>3. Fire a real event</h2>
+  <pre><code>$ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{
+    <span class="st">"id"</span>:          <span class="st">"evt_001"</span>,
+    <span class="st">"type"</span>:        <span class="st">"invoice.due"</span>,
+    <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span>,
+    <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/calle"</span>
+  }'
+
+<span class="cm"># → {"status":"call_placed","session_id":"evt_001","call_id":"call_...","phone":"+14155550002"}</span></code></pre>
+  <p>The response returns immediately. When the call finishes, calle POSTs the structured outcome to your <code>callback_url</code>:</p>
+  <pre><code>{
+  <span class="st">"event_id"</span>:    <span class="st">"evt_001"</span>,
+  <span class="st">"call_status"</span>: <span class="st">"completed"</span>,
+  <span class="st">"outcome"</span>:     { <span class="st">"outcome"</span>: <span class="st">"payment_promised"</span>, <span class="st">"promise_date"</span>: <span class="st">"2026-09-12"</span> },
+  <span class="st">"actions"</span>:     [<span class="st">"write.mark_promise(inv_5002 → 2026-09-12)"</span>, <span class="st">"audit.record_contact"</span>],
+  <span class="st">"confidence"</span>:  { <span class="st">"score"</span>: 0.93, <span class="st">"label"</span>: <span class="st">"high"</span> },
+  <span class="st">"transcript"</span>:  [ ... ]
+}</code></pre>
+
+  <h2>4. Or use the CLI</h2>
+  <pre><code>$ go run ./cmd/callectl fire invoice.due cus_1002
+$ go run ./cmd/callectl sessions <span class="kw">--watch</span>
+$ go run ./cmd/callectl metrics</code></pre>
+
+  <h2>5. Going live</h2>
+  <p>Dry-run proves the pipeline. For real phone calls, all you change is the environment — see <a href="production.html">Production</a>.</p>
+
+  <div class="prevnext">
+    <a href="../index.html">← Home</a>
+    <a href="api.html">API reference →</a>
+  </div>
+</div>
+
+<footer>calle — event-driven AI phone calls · MIT</footer>
+</body>
+</html>
