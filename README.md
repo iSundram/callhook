@@ -1,11 +1,25 @@
-# callhook
+<p align="center">
+  <img src="assets/icon-tight.svg" width="110" alt="Callhook logo" />
+</p>
+
+<h1 align="center">callhook</h1>
+
+<p align="center"><em>Fire a webhook. Your customer's phone rings.</em></p>
+
+<p align="center">
+  <a href="https://github.com/iSundram/callhook/actions/workflows/ci.yml"><img src="https://github.com/iSundram/callhook/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/iSundram/callhook/releases"><img src="https://img.shields.io/github/v/release/iSundram/callhook?color=%23D1D0D0&display_name=tag" alt="Release" /></a>
+  <a href="https://callhook.github.io"><img src="https://img.shields.io/badge/docs-callhook.github.io-D1D0D0" alt="Docs" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-5C4E4E" alt="License" /></a>
+  <img src="https://img.shields.io/badge/Go-1.25-988686" alt="Go" />
+</p>
+
+---
 
 **Event-driven AI phone calls.** Your system fires a webhook; callhook places an
 intelligent phone call via [CALL-E](https://heycall-e.com) and POSTs a
 structured outcome back. No scripts, no robocalls — a voice agent that knows
 the customer's context before it dials.
-
-**📖 Documentation: https://callhook.github.io**
 
 > **The voice channel as an API.** Most phone-agent projects are one
 > workflow: confirm an appointment, fill a shift, chase one invoice. callhook
