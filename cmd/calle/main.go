@@ -22,6 +22,9 @@ import (
 	"github.com/iSundram/calle/internal/store"
 )
 
+// version is stamped at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	addr := getenv("CALLE_ADDR", ":8080")
 	apiKey := os.Getenv("CALLE_API_KEY")
@@ -114,7 +117,7 @@ func main() {
 		_ = httpSrv.Close()
 	}()
 
-	log.Printf("calle listening on %s (dashboard: http://localhost%s/)", addr, addr)
+	log.Printf("calle %s listening on %s (dashboard: http://localhost%s/)", version, addr, addr)
 	log.Printf("supported events: %s", "invoice.due, account.warning, promo.offer")
 	log.Printf("intake: POST /api/events (+/batch)   webhook: POST /calle/webhook   metrics: GET /api/metrics")
 	log.Printf("retries: redial after %s, up to %d retries | windows: %v", retryDelay, session.MaxRetries, enforceWindows)
