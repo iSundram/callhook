@@ -5,6 +5,13 @@ intelligent phone call via [CALL-E](https://heycall-e.com) and POSTs a
 structured outcome back. No scripts, no robocalls — a voice agent that knows
 the customer's context before it dials.
 
+> **The voice channel as an API.** Most phone-agent projects are one
+> workflow: confirm an appointment, fill a shift, chase one invoice. calle
+> is the layer underneath: point *any* business system at one endpoint,
+> fire *any* event type, and get intelligent calls with structured outcomes
+> back — with retry policy, polite calling hours, crash-safe persistence,
+> and a full audit trail included.
+
 ```
 business app ──POST /api/events──► calle ──CALL-E API──► 📞 customer
      ▲                                │
