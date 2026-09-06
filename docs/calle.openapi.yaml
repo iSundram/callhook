@@ -1,0 +1,1634 @@
+openapi: 3.1.0
+info:
+  title: CALL-E Developer API
+  version: 0.7.0
+  description: Developer API contract used by the CALL-E TypeScript and Python SDKs.
+servers:
+  - url: https://api.heycall-e.com
+    description: Placeholder developer API base URL.
+security:
+  - bearerAuth: []
+paths:
+  /v1/calls:
+    post:
+      operationId: createCall
+      tags:
+        - calls
+      summary: Create Call
+      description: Create an asynchronous call. Use `result_schema` and `recipient_result_schema` to ask CALL-E to extract structured JSON results from terminal call evidence.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCallRequest"
+            examples:
+              batchLunch:
+                summary: Check Friday lunch availability for two recipients.
+                value:
+                  task: Call each recipient and ask whether they can attend Friday lunch in San Francisco.
+                  recipients:
+                    - phones:
+                        - "<RECIPIENT_1_E164_PHONE>"
+                    - phones:
+                        - "<RECIPIENT_2_E164_PHONE>"
+                  result_schema:
+                    type: object
+                    required:
+                      - completed_count
+                    properties:
+                      completed_count:
+                        type: integer
+                        description: Number of recipients who clearly confirmed they can attend.
+                    additionalProperties: false
+                  recipient_result_schema:
+                    type: object
+                    required:
+                      - can_attend
+                    properties:
+                      can_attend:
+                        type: string
+                        enum:
+                          - "yes"
+                          - "no"
+                          - unknown
+                        description: Use yes when the recipient clearly confirms attendance. Use no when they clearly decline. Use unknown if the call did not reach the recipient or the answer is unclear.
+                    additionalProperties: false
+                  metadata:
+                    workflow_run_id: wf_123
+                  webhook_url: https://example.com/calle/webhook
+              salesHandoff:
+                summary: Route an interested prospect to a human.
+                value:
+                  task: Call <E164_PHONE>, explain our product briefly, and find out whether the prospect wants human assistance or shows strong buying interest.
+                  result_schema:
+                    type: object
+                    required:
+                      - human_assistance_requested
+                      - interest_level
+                      - handoff_recommended
+                      - evidence_summary
+                    properties:
+                      human_assistance_requested:
+                        type: string
+                        enum:
+                          - "yes"
+                          - "no"
+                          - unknown
+                        description: Whether the prospect explicitly asked to speak with a human, sales representative, specialist, manager, or requested a callback from a person. Use unknown if the evidence is unclear.
+                      interest_level:
+                        type: string
+                        enum:
+                          - strong
+                          - moderate
+                          - low
+                          - not_interested
+                          - unknown
+                        description: Use strong when the prospect asks about pricing, demos, next steps, availability, implementation, purchase process, or clearly wants follow-up. Use moderate for curiosity without a concrete next step. Use low for minimal engagement. Use not_interested when they clearly decline. Use unknown when evidence is insufficient.
+                      handoff_recommended:
+                        type: string
+                        enum:
+                          - "yes"
+                          - "no"
+                          - unknown
+                        description: Use yes if human_assistance_requested is yes or interest_level is strong. Use no when the prospect is low interest or not interested. Use unknown when the evidence is insufficient.
+                      evidence_summary:
+                        type: string
+                        description: One concise sentence citing the prospect's words or behavior that supports the handoff decision.
+                    additionalProperties: false
+                  metadata:
+                    workflow_run_id: wf_sales_123
+              taskOnly:
+                summary: Let CALL-E infer recipients from the task.
+                value:
+                  task: Call <E164_PHONE> and ask whether they can attend Friday lunch in San Francisco.
+      responses:
+        "201":
+          description: Call task accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallTask"
+              examples:
+                completedFridayLunch:
+                  summary: Completed US Friday lunch check.
+                  value:
+                    id: call_123
+                    object: "call_task"
+                    status: completed
+                    task: Call each recipient and ask whether they can attend Friday lunch in San Francisco.
+                    recipients:
+                      - id: rcp_123
+                        phones:
+                          - "<RECIPIENT_1_E164_PHONE>"
+                        locale: en-US
+                        region: US
+                        status: completed
+                        structured_result:
+                          can_attend: "yes"
+                        summary: The recipient can attend Friday lunch.
+                        attempts:
+                          - id: att_123
+                            phone: "<RECIPIENT_1_E164_PHONE>"
+                            status: completed
+                            started_at: "2026-06-01T17:00:05Z"
+                            completed_at: "2026-06-01T17:01:00Z"
+                            summary: The recipient can attend Friday lunch.
+                            transcript_turns:
+                              - offset_seconds: 0
+                                speaker: bot
+                                text: Can you attend Friday lunch in San Francisco?
+                              - offset_seconds: 8
+                                speaker: user
+                                text: Yes, I can attend.
+                            provider_call_id: provider_call_123
+                            failure_code: null
+                            failure_message: null
+                    structured_result:
+                      completed_count: 1
+                    summary: The recipient can attend Friday lunch.
+                    task_completed: true
+                    completion_confidence:
+                      score: 0.92
+                      label: high
+                    evidence:
+                      - The recipient said yes.
+                    metadata:
+                      workflow_run_id: wf_123
+                    failure_code: null
+                    failure_message: null
+                    created_at: "2026-06-01T17:00:00Z"
+                    completed_at: "2026-06-01T17:01:00Z"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/calls/{call_id}:
+    get:
+      operationId: getCall
+      tags:
+        - calls
+      summary: Get Call
+      description: Get a call by id.
+      parameters:
+        - $ref: "#/components/parameters/CallId"
+      responses:
+        "200":
+          description: Current call state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallTask"
+              examples:
+                completedFridayLunch:
+                  summary: Completed US Friday lunch check.
+                  value:
+                    id: call_123
+                    object: "call_task"
+                    status: completed
+                    task: Call each recipient and ask whether they can attend Friday lunch in San Francisco.
+                    recipients:
+                      - id: rcp_123
+                        phones:
+                          - "<RECIPIENT_1_E164_PHONE>"
+                        locale: en-US
+                        region: US
+                        status: completed
+                        structured_result:
+                          can_attend: "yes"
+                        summary: The recipient can attend Friday lunch.
+                        attempts:
+                          - id: att_123
+                            phone: "<RECIPIENT_1_E164_PHONE>"
+                            status: completed
+                            started_at: "2026-06-01T17:00:05Z"
+                            completed_at: "2026-06-01T17:01:00Z"
+                            summary: The recipient can attend Friday lunch.
+                            transcript_turns:
+                              - offset_seconds: 0
+                                speaker: bot
+                                text: Can you attend Friday lunch in San Francisco?
+                              - offset_seconds: 8
+                                speaker: user
+                                text: Yes, I can attend.
+                            provider_call_id: provider_call_123
+                            failure_code: null
+                            failure_message: null
+                    structured_result:
+                      completed_count: 1
+                    summary: The recipient can attend Friday lunch.
+                    task_completed: true
+                    completion_confidence:
+                      score: 0.92
+                      label: high
+                    evidence:
+                      - The recipient said yes.
+                    metadata:
+                      workflow_run_id: wf_123
+                    failure_code: null
+                    failure_message: null
+                    created_at: "2026-06-01T17:00:00Z"
+                    completed_at: "2026-06-01T17:01:00Z"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/calls/{call_id}/events:
+    get:
+      operationId: listCallEvents
+      tags:
+        - calls
+      summary: List Call Events
+      description: List developer-facing call events.
+      parameters:
+        - $ref: "#/components/parameters/CallId"
+        - name: cursor
+          in: query
+          description: Cursor returned by the previous event page. Omit it to start at the first available event page for the call.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of events to return in one page.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Call event page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventList"
+              examples:
+                callEvents:
+                  summary: US Friday lunch call events.
+                  value:
+                    object: list
+                    data:
+                      - id: evt_123
+                        type: call.completed
+                        call_id: call_123
+                        created_at: "2026-06-01T17:01:00Z"
+                        level: info
+                        status: completed
+                        message: Call completed.
+                        details:
+                          region: US
+                          locale: en-US
+                    next_cursor: null
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals:
+    get:
+      operationId: listGoals
+      tags:
+        - goals
+      summary: List Goals
+      description: |-
+        List the authenticated owner's active, listed Goals that have a published RunSpec. For
+        example, a fulfillment service can inspect the published interface for its reusable
+        delivery-confirmation workflow before creating phone-specific Runs.
+
+        Results are ordered by opaque Goal identity. Use `next_cursor` as the next request's
+        `after` value; clients must not parse or construct cursor values. `title` and `description`
+        help operators recognize each published workflow, but integrations should still store the
+        intended `goal_id` at publish time and must not execute the first list item blindly.
+        Candidates whose published RunSpec is not execution-ready are omitted without preventing
+        later executable Goals from appearing in the page.
+      parameters:
+        - $ref: "#/components/parameters/GoalListLimit"
+        - $ref: "#/components/parameters/GoalListAfter"
+      responses:
+        "200":
+          description: Page of executable published Goal interfaces.
+          headers:
+            Cache-Control:
+              description: Prevent storage of owner-scoped Goal data.
+              schema:
+                type: string
+                enum:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalList"
+              examples:
+                deliveryConfirmation:
+                  summary: Published delivery-window confirmation Goal.
+                  value:
+                    object: list
+                    data:
+                      - object: goal
+                        id: goal_delivery_confirmation
+                        title: Delivery window confirmation
+                        description: Call a customer to confirm the proposed delivery window or collect a preferred alternative.
+                        status: active
+                        published_run_spec:
+                          id: rspec_delivery_v4
+                          version: 4
+                          input_schema:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              customer_name:
+                                type: string
+                                description: Name the voice agent may use when greeting the customer.
+                              order_reference:
+                                type: string
+                                description: Customer-safe order reference to mention during the call.
+                              delivery_window:
+                                type: string
+                                description: Proposed local delivery date and time window.
+                            required:
+                              - customer_name
+                              - order_reference
+                              - delivery_window
+                          result_schema:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              delivery_outcome:
+                                type: string
+                                enum:
+                                  - confirmed
+                                  - reschedule_requested
+                                  - declined
+                                  - unknown
+                              preferred_window:
+                                type: string
+                                description: Alternative window requested by the customer, when stated.
+                            required:
+                              - delivery_outcome
+                    next_cursor: null
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals/{goal_id}:
+    get:
+      operationId: getGoal
+      tags:
+        - goals
+      summary: Get Goal
+      description: |-
+        Get an owner-scoped active Goal and its currently published immutable RunSpec interface.
+
+        Store the `goal_id` returned by Chat publish success. `title` and `description` explain the
+        current published workflow. Before sending a delivery-confirmation Run, use `input_schema`
+        to verify that `customer_name`, `order_reference`, and `delivery_window` match the current
+        published version, and use `result_schema` to prepare downstream outcome handling.
+
+        This endpoint does not search by title, objective, or recency, and does not expose authoring
+        instructions, provider bindings, or result materialization guidance. The
+        server always resolves the current published pointer for a new business key.
+      parameters:
+        - $ref: "#/components/parameters/GoalId"
+      responses:
+        "200":
+          description: Active Goal and its currently published RunSpec interface.
+          headers:
+            Cache-Control:
+              description: Prevent storage of owner-scoped Goal data.
+              schema:
+                type: string
+                enum:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals/{goal_id}/runs:
+    post:
+      operationId: createGoalRun
+      tags:
+        - goal-runs
+      summary: Create Goal Run
+      description: |-
+        Create one singleton Goal Run for a published Goal.
+
+        In a delivery-confirmation integration, `phone` identifies one customer and `variables`
+        provide that order's reference and proposed window. CALL-E atomically resolves and pins the
+        published RunSpec, validates the variables, and durably accepts execution.
+
+        The request cannot select, replace, or relax schemas or the materialization contract. The
+        first accepted request and an exact idempotent replay both return `201` with the same Goal
+        Run identity. A `201` response means durable acceptance, not that the recipient answered or
+        that `result` is ready.
+      parameters:
+        - $ref: "#/components/parameters/GoalId"
+        - $ref: "#/components/parameters/GoalRunIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoalRunRequest"
+            examples:
+              confirmDeliveryWindow:
+                summary: Ask one customer to confirm a proposed delivery window.
+                value:
+                  phone: "<E164_PHONE>"
+                  variables:
+                    customer_name: Taylor
+                    order_reference: ORD-8472
+                    delivery_window: July 24, 2:00-4:00 PM
+      responses:
+        "201":
+          description: Goal Run durably accepted, or the current projection of an exact idempotent replay.
+          headers:
+            Cache-Control:
+              description: Prevent storage of owner-scoped Goal Run data.
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Location:
+              description: Relative URL of the Goal Run resource.
+              schema:
+                type: string
+            Retry-After:
+              description: Suggested number of seconds before polling the execution.
+              schema:
+                type: integer
+                minimum: 0
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalRun"
+              examples:
+                acceptedDeliveryConfirmation:
+                  summary: Delivery confirmation accepted and awaiting execution.
+                  value:
+                    object: goal_run
+                    id: rgrp_delivery_ord_8472
+                    goal_id: goal_delivery_confirmation
+                    run_id: run_delivery_ord_8472
+                    call_id: null
+                    status: queued
+                    run_spec:
+                      id: rspec_delivery_v4
+                      version: 4
+                    result: null
+                    error: null
+                    created_at: "2026-07-22T10:00:00Z"
+                    completed_at: null
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "402":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals/{goal_id}/runs/{goal_run_id}:
+    get:
+      operationId: getGoalRun
+      tags:
+        - goal-runs
+      summary: Get Goal Run
+      description: |-
+        Get an owner- and Goal-scoped Run and its structured result facts.
+
+        This is a pure read of the immutable execution snapshot. It does not resolve the current
+        Goal pointer, dispatch work, or start result materialization. Use the `GoalRun.id` returned
+        by create as `goal_run_id`; the nested telephone `run_id` is not valid in this path.
+
+        Poll until either `result` or `error` is non-null. A non-null `result` is the parsed object
+        validated against the published result schema. A non-null `error` means this Run will not
+        produce a result. `status: completed` with both fields null means result processing is still
+        in progress.
+      parameters:
+        - $ref: "#/components/parameters/GoalId"
+        - $ref: "#/components/parameters/GoalRunId"
+      responses:
+        "200":
+          description: Current Goal Run execution and result state.
+          headers:
+            Cache-Control:
+              description: Prevent storage of owner-scoped Goal Run data.
+              schema:
+                type: string
+                enum:
+                  - no-store
+            Retry-After:
+              description: Suggested number of seconds before polling again when results are pending.
+              schema:
+                type: integer
+                minimum: 0
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalRun"
+              examples:
+                deliveryRescheduleRequested:
+                  summary: Customer requested a different delivery window.
+                  value:
+                    object: goal_run
+                    id: rgrp_delivery_ord_8472
+                    goal_id: goal_delivery_confirmation
+                    run_id: run_delivery_ord_8472
+                    call_id: calling_call_delivery_ord_8472
+                    status: completed
+                    run_spec:
+                      id: rspec_delivery_v4
+                      version: 4
+                    result:
+                      delivery_outcome: reschedule_requested
+                      preferred_window: July 24 after 5:00 PM
+                    error: null
+                    created_at: "2026-07-22T10:00:00Z"
+                    completed_at: "2026-07-22T10:01:12Z"
+                deliveryConfirmationNoAnswer:
+                  summary: No human answered, so no business result is available.
+                  value:
+                    object: goal_run
+                    id: rgrp_delivery_ord_8472
+                    goal_id: goal_delivery_confirmation
+                    run_id: run_delivery_ord_8472
+                    call_id: null
+                    status: failed
+                    run_spec:
+                      id: rspec_delivery_v4
+                      version: 4
+                    result: null
+                    error:
+                      code: no_answer
+                      message: No human answered the call.
+                      detail_code: no_human_answered
+                    created_at: "2026-07-22T10:00:00Z"
+                    completed_at: "2026-07-22T10:01:12Z"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+  /calle/webhook:
+    post:
+      operationId: receiveWebhookEvent
+      tags:
+        - webhooks
+      summary: Server Message
+      description: CALL-E sends this request after a call reaches a terminal state and its post-call outcome and requested structured results are finalized. Configure this URL with `webhook_url` on create call or through project-level webhook settings.
+      security: []
+      servers:
+        - url: https://{yourserver}
+          description: Your public webhook receiver host.
+          variables:
+            yourserver:
+              default: example.com
+              description: Hostname for your webhook receiver.
+      parameters:
+        - $ref: "#/components/parameters/WebhookEventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookEvent"
+            examples:
+              callCompleted:
+                summary: Completed US Friday lunch webhook.
+                value:
+                  id: evt_123
+                  type: call.completed
+                  created_at: "2026-06-01T17:01:00Z"
+                  data:
+                    object: "call_task"
+                    id: call_123
+                    status: completed
+                    task: Call each recipient and ask whether they can attend Friday lunch in San Francisco.
+                    recipients:
+                      - id: rcp_123
+                        phones:
+                          - "<RECIPIENT_1_E164_PHONE>"
+                        locale: en-US
+                        region: US
+                        status: completed
+                        structured_result:
+                          can_attend: "yes"
+                        summary: The recipient can attend Friday lunch.
+                        attempts:
+                          - id: att_123
+                            phone: "<RECIPIENT_1_E164_PHONE>"
+                            status: completed
+                            started_at: "2026-06-01T17:00:05Z"
+                            completed_at: "2026-06-01T17:01:00Z"
+                            summary: The recipient can attend Friday lunch.
+                            transcript_turns:
+                              - offset_seconds: 0
+                                speaker: bot
+                                text: Can you attend Friday lunch in San Francisco?
+                              - offset_seconds: 8
+                                speaker: user
+                                text: Yes, I can attend.
+                            provider_call_id: provider_call_123
+                            failure_code: null
+                            failure_message: null
+                    structured_result:
+                      completed_count: 1
+                    summary: The recipient can attend Friday lunch.
+                    task_completed: true
+                    completion_confidence:
+                      score: 0.92
+                      label: high
+                    evidence:
+                      - The recipient said yes.
+                    metadata:
+                      workflow_run_id: wf_123
+                    failure_code: null
+                    failure_message: null
+                    created_at: "2026-06-01T17:00:00Z"
+                    completed_at: "2026-06-01T17:01:00Z"
+      responses:
+        "200":
+          description: Webhook accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookAcknowledgement"
+              examples:
+                accepted:
+                  summary: Acknowledge the webhook.
+                  value:
+                    ok: true
+        "400":
+          description: Webhook rejected because the payload was invalid.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Stable caller-provided key used to make create-call retries safe. Reusing the same key with the same request returns the original call instead of creating a duplicate.
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+    GoalRunIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: |-
+        Required business-stable identity for one logical Goal Run, scoped to the authenticated
+        owner and `goal_id`. Derive it from a durable workflow event, for example
+        `delivery:ORD-8472:confirm-window:v1`, and persist it before sending the request.
+
+        Retry a timeout with the same key and byte-equivalent logical input. An exact replay returns
+        the original Goal Run with `201`; changing the phone or variables while reusing the key
+        returns `409 idempotency_conflict`. Do not generate a new random key for each network retry.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      example: delivery:ORD-8472:confirm-window:v1
+    GoalListLimit:
+      name: limit
+      in: query
+      description: |-
+        Maximum number of Goal interfaces in this page. Defaults to `20`; values below `1` or above
+        `100` return `400 invalid_request`. A page can contain fewer items even when the limit is
+        larger. Continue only when `next_cursor` is non-null.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    GoalListAfter:
+      name: after
+      in: query
+      description: |-
+        Opaque cursor returned as `next_cursor` by the immediately preceding list response. Pass it
+        unchanged together with the desired `limit`. Do not decode it, construct it from a Goal id,
+        or persist assumptions about its format. Omit this parameter for the first page.
+      required: false
+      schema:
+        type: string
+        minLength: 1
+      example: goalcur_Z29hbF9kZWxpdmVyeV9jb25maXJtYXRpb24
+    GoalId:
+      name: goal_id
+      in: path
+      description: |-
+        Opaque public Goal identity returned by CALL-E Chat publish success or `GET /v1/goals`.
+        Store it with your integration configuration. It identifies the reusable Goal and is
+        different from `published_run_spec.id`, `goal_run_id`, and the nested telephone `run_id`.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: goal_delivery_confirmation
+    GoalRunId:
+      name: goal_run_id
+      in: path
+      description: |-
+        Opaque `GoalRun.id` returned by `POST /v1/goals/{goal_id}/runs`. Use it together with the
+        same `goal_id` when polling. Do not substitute the nested telephone `run_id`.
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: rgrp_delivery_ord_8472
+    CallId:
+      name: call_id
+      in: path
+      description: Top-level CallTask `id` returned by Create Call. It starts with `call_`.
+      required: true
+      schema:
+        type: string
+        pattern: "^call_[A-Za-z0-9_-]+$"
+    WebhookEventId:
+      name: CALL-E-Event-Id
+      in: header
+      description: Unique webhook event id. Store this value before side effects so duplicate deliveries can be ignored safely.
+      required: true
+      schema:
+        type: string
+        pattern: "^evt_[A-Za-z0-9_-]+$"
+      example: evt_123
+  responses:
+    ErrorResponse:
+      description: Stable API error.
+      headers:
+        Cache-Control:
+          description: Prevent storage of owner-scoped API error details.
+          schema:
+            type: string
+            enum:
+              - no-store
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+  schemas:
+    GoalList:
+      type: object
+      description: |-
+        Cursor-paginated collection of the authenticated owner's listed, active, published Goal
+        interfaces. Use this for discovery or recovery of a known Goal id, not as title search.
+      additionalProperties: false
+      required:
+        - object
+        - data
+        - next_cursor
+      properties:
+        object:
+          type: string
+          description: Always `list` for paginated list responses.
+          enum:
+            - list
+        data:
+          type: array
+          description: |-
+            Goal interfaces in stable opaque-id order. Do not assume the first item is the Goal your
+            workflow should execute; store the intended `goal_id` when it is published.
+          items:
+            $ref: "#/components/schemas/Goal"
+        next_cursor:
+          type:
+            - string
+            - "null"
+          description: Opaque cursor for the next page. `null` means there are no more Goals.
+    Goal:
+      type: object
+      description: |-
+        Owner-scoped active Goal and its currently published immutable RunSpec interface. This is an
+        execution contract, not an authoring record: it includes a developer-facing title and
+        description but omits prompts, provider settings, and history.
+      additionalProperties: false
+      required:
+        - object
+        - id
+        - title
+        - description
+        - status
+        - published_run_spec
+      properties:
+        object:
+          type: string
+          description: Always `goal` for Goal responses.
+          enum:
+            - goal
+        id:
+          type: string
+          description: Opaque Goal identity. This is distinct from the nested RunSpec identity.
+          minLength: 1
+        title:
+          type:
+            - string
+            - "null"
+          description: Short developer-facing title from the current published RunSpec. It may be null for an untitled Goal.
+          minLength: 1
+        description:
+          type: string
+          description: Developer-facing summary of what the current published Goal does. This is not the execution prompt.
+          minLength: 1
+        status:
+          type: string
+          description: Always `active`; non-executable Goals are not returned by this surface.
+          enum:
+            - active
+        published_run_spec:
+          description: |-
+            Currently published immutable interface used to validate new `variables` and interpret
+            `result`. New business keys pin this version at acceptance time.
+          $ref: "#/components/schemas/GoalPublishedRunSpec"
+    GoalPublishedRunSpec:
+      type: object
+      description: |-
+        Read-only published RunSpec interface for a Goal. Applications should inspect the schemas
+        before constructing variables and should record the version used by deployments.
+      additionalProperties: false
+      required:
+        - id
+        - version
+        - input_schema
+        - result_schema
+      properties:
+        id:
+          type: string
+          description: Opaque immutable RunSpec identity.
+          minLength: 1
+        version:
+          type: integer
+          description: Monotonic published version within this Goal. A later publish affects only new Runs.
+          minimum: 1
+        input_schema:
+          type: object
+          description: |-
+            Normalized JSON Schema for per-Run `variables`. Respect `required`, property types, enum
+            values, defaults, and `additionalProperties`; invalid input is rejected before execution.
+          additionalProperties: true
+        result_schema:
+          type: object
+          description: |-
+            Normalized JSON Schema for `result`. CALL-E exposes a result only after it is
+            validated against this exact pinned schema and durably persisted.
+          additionalProperties: true
+    CreateGoalRunRequest:
+      type: object
+      description: |-
+        One phone-specific submission against the Goal's currently published RunSpec. The object is
+        closed: target wrappers, per-Run region/locale/display-name hints, task text, schemas, RunSpec
+        selectors, provider settings, and unknown fields are not accepted. Region, callee locale, and
+        runtime profile come from the published Goal. Use the required `Idempotency-Key` header for
+        retry safety.
+      additionalProperties: false
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: |-
+            Recipient phone in canonical E.164 form: `+`, country code, and subscriber number with
+            no spaces, punctuation, or extension. The caller must be authorized to contact it.
+            CALL-E validates it against the published Goal's fixed Voice Target policy.
+          pattern: "^\\+[1-9]\\d{7,14}$"
+        variables:
+          description: |-
+            Per-Run business context validated against the pinned published `input_schema`. Keys and
+            required fields vary by Goal. Values must be finite JSON strings, numbers, or booleans;
+            nested objects, arrays, and null are not supported. Omit for Goals whose schema accepts `{}`.
+          default: {}
+          $ref: "#/components/schemas/GoalVariables"
+    GoalScalar:
+      type:
+        - string
+        - number
+        - boolean
+      description: Scalar value supported by published Goal input and result Schema profiles.
+    GoalVariables:
+      type: object
+      description: |-
+        Dynamic variable map validated by the exact published input schema pinned during acceptance.
+        Read the Goal interface rather than hard-coding undocumented keys.
+      additionalProperties:
+        $ref: "#/components/schemas/GoalScalar"
+    GoalRun:
+      type: object
+      description: |-
+        Public projection of one phone-specific execution of a published Goal. A non-null `result`
+        is a successfully parsed and persisted object. A non-null `error` means the Run will not
+        produce a result. When both are null, continue polling.
+      additionalProperties: false
+      required:
+        - object
+        - id
+        - goal_id
+        - run_id
+        - call_id
+        - run_spec
+        - status
+        - result
+        - error
+        - created_at
+        - completed_at
+      properties:
+        object:
+          type: string
+          enum:
+            - goal_run
+        id:
+          type: string
+          description: Public Goal Run identity. Persist this value and use it as `goal_run_id` when polling.
+          minLength: 1
+        goal_id:
+          type: string
+          description: Goal identity supplied in the create path.
+          minLength: 1
+        run_id:
+          type: string
+          description: Internal execution member exposed for correlation; do not use it in the Goal Run polling path.
+          minLength: 1
+        call_id:
+          type:
+            - string
+            - "null"
+          description: |-
+            Calling call identifier selected for this Goal Run when that trusted fact is available,
+            or `null` before a call identifier is persisted or when no identifier is available. This
+            is different from the Goal Run `id` and nested `run_id`; it does not expose other provider
+            diagnostics and must not be treated as an independent answered-call boolean.
+          minLength: 1
+          maxLength: 255
+        run_spec:
+          description: Read-only identity and version of the exact RunSpec pinned by this Run.
+          $ref: "#/components/schemas/GoalRunSpecSnapshot"
+        status:
+          $ref: "#/components/schemas/GoalRunStatus"
+        result:
+          type:
+            - object
+            - "null"
+          description: |-
+            Parsed result validated against the published result schema and durably persisted, or
+            `null` while processing or when the Run has an error. Its keys vary by Goal.
+          additionalProperties:
+            $ref: "#/components/schemas/GoalScalar"
+        error:
+          description: |-
+            Unified execution or result-processing error, or `null`. Branch on `code`; keep `message`
+            for logs and operators. A non-null error is final and is mutually exclusive with `result`.
+          oneOf:
+            - $ref: "#/components/schemas/GoalRunError"
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+          description: UTC time at which CALL-E durably accepted this Goal Run.
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: UTC telephone-execution completion time, or `null` while execution is non-terminal.
+    GoalRunSpecSnapshot:
+      type: object
+      description: Exact immutable RunSpec identity and version pinned by a Goal Run.
+      additionalProperties: false
+      required:
+        - id
+        - version
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Exact immutable RunSpec id pinned when the Goal Run was accepted.
+        version:
+          type: integer
+          minimum: 1
+          description: Published RunSpec version pinned for this Goal Run.
+    GoalRunStatus:
+      type: string
+      description: |-
+        Stable telephone execution state. `queued` and `in_progress` are non-terminal; `completed`,
+        `failed`, and `canceled` are terminal. A completed call can still have `result: null` and
+        `error: null` briefly while CALL-E parses and saves the result.
+      enum:
+        - queued
+        - in_progress
+        - completed
+        - failed
+        - canceled
+    GoalRunError:
+      type: object
+      description: Unified safe error returned when a Goal Run cannot produce a usable result.
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - detail_code
+      properties:
+        code:
+          type: string
+          enum:
+            - call_failed
+            - no_answer
+            - declined
+            - timed_out
+            - canceled
+            - result_invalid
+            - result_unavailable
+            - result_failed
+        message:
+          type: string
+          description: Human-readable safe explanation. Do not parse this field for application logic.
+          minLength: 1
+        detail_code:
+          type:
+            - string
+            - "null"
+          description: Optional low-cardinality diagnostic detail safe for logs or narrow application branching.
+          maxLength: 128
+    CreateCallRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - task
+      properties:
+        task:
+          type: string
+          description: Natural-language instruction for the call task. Include the goal, relevant details the voice agent should know, and the exact information you want collected.
+          minLength: 1
+        recipients:
+          type:
+            - array
+            - "null"
+          description: Optional explicit recipients for this call task. Omit it when the task text already contains the phone targets CALL-E should use.
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CallTaskRecipientRequest"
+        result_schema:
+          type:
+            - object
+            - "null"
+          description: |-
+            Optional JSON Schema object that defines the structured result CALL-E should extract for the whole call task.
+
+            CALL-E passes the schema, including field `description` values, to the extraction model after the call reaches a terminal state. Use descriptions to explain field meaning and enum selection logic, for example: "Use strong when the prospect asks about pricing, demos, or next steps."
+
+            Descriptions guide extraction but are not hard validation rules. Hard validation comes from `type`, `required`, `enum`, and `additionalProperties`.
+
+            Supported schema features are `type`, `properties`, `required`, `enum`, nested `object` fields, simple `array.items`, `description`, and `additionalProperties: false`. Unsupported features include `$ref`, `oneOf`, `anyOf`, `allOf`, recursive schemas, complex format validation, and `additionalProperties: true`.
+
+            Prefer string enums over booleans for business decisions that may be unclear, and include an `unknown` enum value when the call may not provide enough evidence.
+          additionalProperties: true
+        recipient_result_schema:
+          type:
+            - object
+            - "null"
+          description: |-
+            Optional JSON Schema object that defines the structured result CALL-E should extract independently for each recipient.
+
+            This is useful for batch calls where each recipient needs their own outcome, such as `can_attend`, `confirmed`, `requested_callback`, or `interest_level`.
+
+            Do not use reserved recipient response field names such as `summary`, `status`, `transcript`, `call_id`, or timing fields as custom result fields. Use names such as `customer_summary`, `notes`, or `reason` instead.
+
+            Field `description` values are passed to the extraction model and should explain how enum values should be selected. Descriptions guide extraction but are not hard validation rules. Hard validation comes from `type`, `required`, `enum`, and `additionalProperties`.
+
+            Object schemas are strict by default. Fields not declared in `properties` are rejected, and unsupported or invalid recipient results are returned as `null`.
+          additionalProperties: true
+        metadata:
+          type: object
+          description: Optional caller-owned metadata echoed on the call and webhook payloads. Use this for workflow ids, tenant ids, or internal correlation keys.
+          additionalProperties: true
+        webhook_url:
+          type: string
+          description: Optional per-request HTTPS webhook URL. When provided, CALL-E sends terminal call events to this URL in addition to project-level webhook delivery.
+          format: uri
+    CallTaskRecipientRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - phones
+      properties:
+        phones:
+          type: array
+          description: Phone numbers in E.164 format for this recipient. Replace placeholders such as `<RECIPIENT_1_E164_PHONE>` with phone numbers you own or are authorized to call.
+          minItems: 1
+          items:
+            type: string
+            pattern: "^\\+[1-9]\\d{6,14}$"
+        locale:
+          type:
+            - string
+            - "null"
+          description: BCP 47 locale hint for the conversation, for example `en-US`.
+        region:
+          type:
+            - string
+            - "null"
+          description: Recipient country or region code used for routing and compliance checks, for example `US`.
+    CallStatus:
+      type: string
+      description: Current lifecycle state of a CALL-E call. `in_progress` includes post-call result finalization; terminal states are published only after the post-call outcome is available.
+      enum:
+        - queued
+        - in_progress
+        - completed
+        - failed
+        - canceled
+    CompletionConfidence:
+      type: object
+      additionalProperties: false
+      required:
+        - score
+        - label
+      properties:
+        score:
+          type: number
+          description: Confidence score in the 0 to 1 range for CALL-E's task completion judgment.
+          minimum: 0
+          maximum: 1
+        label:
+          type: string
+          description: Confidence label for the task completion judgment, for example `low`, `medium`, or `high`.
+    RecipientStatus:
+      type: string
+      description: Current lifecycle state for one recipient in a call task.
+      enum:
+        - pending
+        - in_progress
+        - completed
+        - failed
+        - skipped
+    AttemptStatus:
+      type: string
+      description: Current lifecycle state for one outbound dial attempt.
+      enum:
+        - queued
+        - dialing
+        - in_progress
+        - completed
+        - failed
+        - canceled
+    TranscriptSpeaker:
+      type: string
+      description: Speaker label for one transcript turn.
+      enum:
+        - bot
+        - user
+        - unknown
+    CallTranscriptTurn:
+      type: object
+      additionalProperties: false
+      required:
+        - offset_seconds
+        - speaker
+        - text
+      properties:
+        offset_seconds:
+          type:
+            - integer
+            - "null"
+          description: Seconds from the start of the attempt. `null` when the source line did not include a parseable timestamp.
+          minimum: 0
+        speaker:
+          description: Speaker for this transcript turn.
+          $ref: "#/components/schemas/TranscriptSpeaker"
+        text:
+          type: string
+          description: Spoken text for this transcript turn.
+    CallTaskAttempt:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - phone
+        - status
+        - started_at
+        - completed_at
+        - summary
+        - transcript_turns
+        - provider_call_id
+        - failure_code
+        - failure_message
+      properties:
+        id:
+          type: string
+          description: Stable outbound attempt identifier.
+        phone:
+          type: string
+          description: Phone number dialed by this attempt.
+        status:
+          description: Current attempt lifecycle state.
+          $ref: "#/components/schemas/AttemptStatus"
+        started_at:
+          type:
+            - string
+            - "null"
+          description: ISO 8601 timestamp when this attempt started dialing. `null` before dialing begins.
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          description: ISO 8601 timestamp when this attempt reached a terminal state. `null` while queued, dialing, or in progress.
+          format: date-time
+        summary:
+          type:
+            - string
+            - "null"
+          description: Human-readable summary for this attempt. `null` when no attempt-level summary is available.
+        transcript_turns:
+          type: array
+          description: Structured transcript turns for this attempt. Empty when no transcript is available.
+          items:
+            $ref: "#/components/schemas/CallTranscriptTurn"
+        provider_call_id:
+          type:
+            - string
+            - "null"
+          description: Provider identifier for this call attempt. Use it to match Dashboard Call Records. Do not use it as call_id.
+        failure_code:
+          type:
+            - string
+            - "null"
+          description: Machine-readable failure reason when this attempt failed.
+        failure_message:
+          type:
+            - string
+            - "null"
+          description: Human-readable failure explanation when this attempt failed.
+    CallTaskRecipient:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - phones
+        - locale
+        - region
+        - status
+        - structured_result
+        - summary
+        - attempts
+      properties:
+        id:
+          type: string
+          description: Stable recipient identifier within the call task.
+        phones:
+          type: array
+          description: Phone numbers associated with this recipient.
+          items:
+            type: string
+        locale:
+          type:
+            - string
+            - "null"
+          description: BCP 47 locale hint used for this recipient when available.
+        region:
+          type:
+            - string
+            - "null"
+          description: Country or region code used for routing and compliance checks when available.
+        status:
+          description: Current recipient lifecycle state.
+          $ref: "#/components/schemas/RecipientStatus"
+        structured_result:
+          type:
+            - object
+            - "null"
+          description: |-
+            Schema-valid structured result object extracted for this recipient using `recipient_result_schema`.
+
+            `null` means CALL-E could not produce a schema-valid result for this recipient from the terminal call evidence, or no `recipient_result_schema` was provided.
+          additionalProperties: true
+        summary:
+          type:
+            - string
+            - "null"
+          description: Short human-readable summary for this recipient. `null` while the recipient is still running or when no useful summary is available.
+        attempts:
+          type: array
+          description: Outbound dial attempts made for this recipient.
+          items:
+            $ref: "#/components/schemas/CallTaskAttempt"
+    CallTask:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - object
+        - status
+        - task
+        - recipients
+        - structured_result
+        - summary
+        - task_completed
+        - completion_confidence
+        - evidence
+        - metadata
+        - failure_code
+        - failure_message
+        - created_at
+        - completed_at
+      properties:
+        id:
+          type: string
+          description: CALL-E call task identifier. Use it as call_id to fetch the call and list its events. Terminal webhooks return it as data.id; the webhook's top-level id identifies the event.
+        object:
+          type: string
+          description: Always `call_task` for call task responses.
+          enum:
+            - call_task
+        status:
+          description: Current call task lifecycle state.
+          $ref: "#/components/schemas/CallStatus"
+        task:
+          type: string
+          description: Original task instruction submitted when the call task was created.
+        recipients:
+          type: array
+          description: Recipient states for this call task.
+          items:
+            $ref: "#/components/schemas/CallTaskRecipient"
+        structured_result:
+          type:
+            - object
+            - "null"
+          description: |-
+            Schema-valid structured result object extracted for the whole call task using `result_schema`.
+
+            `null` means CALL-E could not produce a schema-valid task-level result from the terminal call evidence, or no `result_schema` was provided. Check recipient-level `structured_result` when you use `recipient_result_schema` for batch calls.
+          additionalProperties: true
+        summary:
+          type:
+            - string
+            - "null"
+          description: Short human-readable summary of the call task outcome. `null` while the call task is still running or when no useful summary is available.
+        task_completed:
+          type:
+            - boolean
+            - "null"
+          description: Post-summary judgment for whether the task reached a clear end state for the user. `null` until CALL-E has a terminal post-summary outcome.
+        completion_confidence:
+          oneOf:
+            - $ref: "#/components/schemas/CompletionConfidence"
+            - type: "null"
+          description: Confidence for `task_completed`. `null` until CALL-E has a terminal post-summary outcome.
+        evidence:
+          type: array
+          description: Short evidence items supporting the post-summary task outcome. Empty until CALL-E has terminal evidence.
+          items:
+            type: string
+        metadata:
+          type: object
+          description: Caller-owned metadata submitted on the create call request.
+          additionalProperties: true
+        failure_code:
+          type:
+            - string
+            - "null"
+          description: Machine-readable failure reason when `status` is `failed`; otherwise `null`.
+        failure_message:
+          type:
+            - string
+            - "null"
+          description: Human-readable failure explanation when `status` is `failed`; otherwise `null`.
+        created_at:
+          type: string
+          description: ISO 8601 timestamp when CALL-E accepted the call request.
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          description: ISO 8601 timestamp when the complete terminal call result was published. `null` while queued or in progress.
+          format: date-time
+    DeveloperEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - call_id
+        - created_at
+        - level
+        - status
+        - message
+        - details
+      properties:
+        id:
+          type: string
+          description: Public event identifier.
+        type:
+          type: string
+          description: Developer-facing event type, for example `call.completed`.
+        call_id:
+          type: string
+          description: Public CALL-E call identifier associated with this event.
+        created_at:
+          type: string
+          description: ISO 8601 timestamp when the event was emitted.
+          format: date-time
+        level:
+          type: string
+          description: Event severity for log routing and alerting.
+          enum:
+            - debug
+            - info
+            - warning
+            - error
+        status:
+          description: Call status at the time this event was emitted.
+          $ref: "#/components/schemas/CallStatus"
+        message:
+          type: string
+          description: Short human-readable event message.
+        details:
+          type: object
+          description: Event-specific structured details. Shape depends on the event type.
+          additionalProperties: true
+    EventList:
+      type: object
+      additionalProperties: false
+      required:
+        - object
+        - data
+      properties:
+        object:
+          type: string
+          description: Always `list` for paginated list responses.
+          enum:
+            - list
+        data:
+          type: array
+          description: Events in this page, ordered from oldest to newest for the requested cursor window.
+          items:
+            $ref: "#/components/schemas/DeveloperEvent"
+        next_cursor:
+          type:
+            - string
+            - "null"
+          description: Cursor for the next page. `null` means there are no more events.
+    WebhookEventType:
+      type: string
+      description: Terminal webhook event type.
+      enum:
+        - call.completed
+        - call.failed
+        - call.result_validation_failed
+    WebhookEvent:
+      type: object
+      description: Event payload CALL-E sends to your webhook receiver.
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - created_at
+        - data
+      properties:
+        id:
+          type: string
+          description: Unique webhook event id. Use it as an idempotency key when processing webhook side effects.
+        type:
+          description: Terminal event type for the call.
+          $ref: "#/components/schemas/WebhookEventType"
+        created_at:
+          type: string
+          description: ISO 8601 timestamp when CALL-E created this webhook event.
+          format: date-time
+        data:
+          description: Terminal call task snapshot associated with the webhook event.
+          $ref: "#/components/schemas/WebhookCallData"
+    WebhookCallData:
+      description: Complete terminal call task state included in webhook events. This shape is the same stable `call_task` object returned by the calls API after post-call outcome and requested structured-result finalization.
+      allOf:
+        - $ref: "#/components/schemas/CallTask"
+    WebhookAcknowledgement:
+      type: object
+      description: Example acknowledgement response from your webhook receiver. CALL-E treats any 2xx response as delivered and ignores the response body.
+      additionalProperties: true
+      properties:
+        ok:
+          type: boolean
+          description: Optional acknowledgement flag returned by your server.
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/APIError"
+    APIError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - details
+      properties:
+        code:
+          type: string
+          enum:
+            - invalid_request
+            - unauthorized
+            - forbidden
+            - rate_limit_exceeded
+            - insufficient_balance
+            - unsupported_region
+            - unsupported_language
+            - recipient_blocked
+            - policy_violation
+            - call_not_ready
+            - no_recipients
+            - invalid_recipient
+            - invalid_phone
+            - result_schema_invalid
+            - recipient_result_schema_invalid
+            - idempotency_conflict
+            - goal_not_published
+            - goal_not_executable
+            - goal_not_ready
+            - schema_override_not_allowed
+            - variables_invalid
+            - provider_unavailable
+            - internal_error
+            - not_found
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
