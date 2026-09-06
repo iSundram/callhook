@@ -10,14 +10,22 @@
   const THEME_KEY = 'calle_docs_theme';
   
   function getPreferredTheme() {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved) return saved;
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved) return saved;
+    } catch (e) {
+      // Ignore storage restrictions on file:// or strict browser modes
+    }
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
 
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {
+      // Ignore storage restrictions
+    }
     updateThemeIcon(theme);
   }
 
@@ -188,10 +196,10 @@
     { title: 'Operational Guarantees', cat: 'Home', url: '/index.html#guarantees' },
     { title: 'Fire your first event', cat: 'Home', url: '/index.html#first-event' },
     
-    { title: 'Quickstart: 1. Run calle', cat: 'Quickstart', url: '/pages/quickstart.html#run' },
-    { title: 'Quickstart: 2. Watch dashboard', cat: 'Quickstart', url: '/pages/quickstart.html#dashboard' },
-    { title: 'Quickstart: 3. Fire a real event', cat: 'Quickstart', url: '/pages/quickstart.html#fire-event' },
-    { title: 'Quickstart: 4. Use the CLI (callectl)', cat: 'Quickstart', url: '/pages/quickstart.html#cli' },
+    { title: 'Quickstart: 1. Run calle', cat: 'Quickstart', url: '/pages/quickstart.html#run-calle' },
+    { title: 'Quickstart: 2. Watch dashboard', cat: 'Quickstart', url: '/pages/quickstart.html#watch-dashboard' },
+    { title: 'Quickstart: 3. Fire a real event', cat: 'Quickstart', url: '/pages/quickstart.html#fire-real-event' },
+    { title: 'Quickstart: 4. Use the CLI (callectl)', cat: 'Quickstart', url: '/pages/quickstart.html#use-cli' },
     { title: 'Quickstart: 5. Going live', cat: 'Quickstart', url: '/pages/quickstart.html#going-live' },
 
     { title: 'POST /api/events', cat: 'API', url: '/pages/api.html#post-events' },
