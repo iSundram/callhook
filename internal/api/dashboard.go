@@ -1,7 +1,8 @@
 package api
 
-// dashboardHTML is the single-file live dashboard: event ticker, call
-// states, tool/action audit log, transcripts. Vanilla JS, polls /api/sessions.
+// dashboardHTML is the single-file live dashboard: metrics header, event
+// ticker, call states, transcripts, action audit log. Vanilla JS, polls
+// /api/sessions and /api/metrics.
 const dashboardHTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -12,9 +13,11 @@ const dashboardHTML = `<!doctype html>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0e14; color: #d5dae2; }
-  header { padding: 20px 24px; border-bottom: 1px solid #1e2530; display: flex; align-items: baseline; gap: 14px; }
+  header { padding: 16px 24px; border-bottom: 1px solid #1e2530; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
   header h1 { font-size: 20px; margin: 0; color: #7dd3fc; }
   header span { color: #6b7688; font-size: 13px; }
+  #metrics { padding: 10px 24px; border-bottom: 1px solid #1e2530; font-size: 13px; color: #9aa5b5; display: flex; gap: 18px; flex-wrap: wrap; }
+  #metrics b { color: #e7ecf3; }
   main { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
   .session { border: 1px solid #1e2530; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; background: #0f131b; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -22,6 +25,7 @@ const dashboardHTML = `<!doctype html>
   .pill.type { color: #fbbf24; border-color: #4d3d12; }
   .pill.status { color: #a5f3a5; border-color: #1f4022; }
   .pill.status.bad { color: #fca5a5; border-color: #4d1517; }
+  .pill.wait { color: #c4b5fd; border-color: #3b2f5e; }
   .name { font-weight: bold; color: #e7ecf3; }
   .phone { color: #6b7688; }
   .actions { margin-top: 10px; font-size: 12.5px; }
@@ -32,6 +36,9 @@ const dashboardHTML = `<!doctype html>
   details { margin-top: 8px; }
   summary { cursor: pointer; color: #6b7688; font-size: 12px; }
   pre { background: #0b0e14; border: 1px solid #1e2530; padding: 10px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; color: #b7c2d0; }
+  .turn { padding: 2px 0; }
+  .turn .bot { color: #7dd3fc; }
+  .turn .user { color: #a5f3a5; }
   .empty { color: #4d5a70; text-align: center; padding: 60px 0; }
   .fire { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
   button { font-family: inherit; background: #16202e; color: #7dd3fc; border: 1px solid #234; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; }
@@ -39,7 +46,8 @@ const dashboardHTML = `<!doctype html>
 </style>
 </head>
 <body>
-<header><h1>calle</h1><span>event → intelligent call → structured outcome</span></header>
+<header><h1>calle</h1><span>event → intelligent call → structured outcome</span><span id="mode"></span></header>
+<div id="metrics"></div>
 <main>
   <div class="fire">
     <button onclick="fire('invoice.due')">⚡ fire invoice.due (cus_1002)</button>
@@ -56,7 +64,7 @@ async function fire(type) {
     'account.warning': { reason: 'login from a new country', detail: 'A sign-in from Singapore was detected.' },
     'promo.offer': { offer: '20% off your next invoice', expires: 'end of this week' },
   };
-  await fetch('/api/events', {
+  const res = await fetch('/api/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -64,11 +72,25 @@ async function fire(type) {
       type, customer_id: cust, payload: payloads[type],
     }),
   });
+  const body = await res.json();
+  if (body.status) console.log('calle:', body.status, body.call_id || body.reason || '');
   setTimeout(render, 400);
 }
 async function render() {
-  const res = await fetch('/api/sessions');
-  const sessions = await res.json();
+  const [sessRes, metRes, health] = await Promise.all([
+    fetch('/api/sessions'), fetch('/api/metrics'), fetch('/api/health'),
+  ]);
+  const sessions = await sessRes.json();
+  const metrics = await metRes.json();
+  const h = await health.json();
+  document.getElementById('mode').textContent = h.dry_run ? '· DRY-RUN' : '· LIVE';
+  document.getElementById('metrics').innerHTML =
+    '<span>sessions <b>' + metrics.sessions + '</b></span>' +
+    '<span>in flight <b>' + ((metrics.by_status||{}).in_progress || 0) + '</b></span>' +
+    '<span>completed <b>' + ((metrics.by_status||{}).completed || 0) + '</b></span>' +
+    '<span>failed <b>' + ((metrics.by_status||{}).failed || 0) + '</b></span>' +
+    '<span>deferred/scheduled <b>' + (metrics.retries_armed || 0) + '</b></span>' +
+    '<span>outcomes <b>' + Object.values(metrics.by_outcome || {}).reduce((a,b)=>a+b,0) + '</b></span>';
   const list = document.getElementById('list');
   if (!sessions.length) return;
   list.innerHTML = sessions.map(s => {
@@ -76,12 +98,23 @@ async function render() {
       '<div class="action"><span class="t">' + new Date(a.at).toLocaleTimeString() + '</span><span class="kind">' + a.kind + '</span> ' + esc(a.detail) + '</div>').join('');
     const outcome = s.outcome ? '<div class="outcome">⇒ ' + esc(JSON.stringify(s.outcome)) + '</div>' : '';
     const bad = s.call_status === 'failed' || s.call_status === 'canceled';
+    let wait = '';
+    if (s.next_retry_at) {
+      const label = { retry: 'redial', window: 'window', scheduled: 'scheduled' }[s.next_retry_kind] || 'pending';
+      wait = '<span class="pill wait">' + label + ' @ ' + new Date(s.next_retry_at).toLocaleTimeString() + '</span>';
+    }
+    const transcript = (s.transcript || []).map(t =>
+      '<div class="turn"><span class="' + t.speaker + '">' + t.speaker + ':</span> ' + esc(t.text) + '</div>').join('');
+    const transcriptBlock = transcript ? '<details><summary>transcript</summary><pre>' + transcript + '</pre></details>' : '';
     return '<div class="session"><div class="row">' +
       '<span class="name">' + esc(s.customer || s.customer_id) + '</span>' +
       '<span class="pill type">' + esc(s.event_type) + '</span>' +
       '<span class="phone">' + esc(s.phone || '') + '</span>' +
       '<span class="pill status' + (bad ? ' bad' : '') + '">' + esc(s.call_status || 'intake') + '</span>' +
+      wait +
+      (s.retry_count ? '<span class="pill">attempt ' + (s.retry_count + 1) + '</span>' : '') +
       '</div>' + outcome + '<div class="actions">' + actions + '</div>' +
+      transcriptBlock +
       '<details><summary>task prompt sent to CALL-E</summary><pre>' + esc(s.task || '') + '</pre></details></div>';
   }).join('');
 }

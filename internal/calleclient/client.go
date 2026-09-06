@@ -55,16 +55,22 @@ type Recipient struct {
 // CallTask is the call object returned by GET /v1/calls/{id} and embedded in
 // terminal webhook events.
 type CallTask struct {
-	ID                 string             `json:"id"`
-	Object             string             `json:"object"`
-	Status             string             `json:"status"` // queued | in_progress | completed | failed | canceled
-	Task               string             `json:"task"`
-	Recipients         []RecipientResult  `json:"recipients"`
-	Attempts           []Attempt          `json:"attempts"`
-	StructuredResult   map[string]any     `json:"structured_result"`
-	CompletionConfidence *Confidence      `json:"completion_confidence"`
-	Evidence           []string           `json:"evidence"`
-	CreatedAt          time.Time          `json:"created_at"`
+	ID                   string             `json:"id"`
+	Object               string             `json:"object"`
+	Status               string             `json:"status"` // queued | in_progress | completed | failed | canceled
+	Task                 string             `json:"task"`
+	Recipients           []RecipientResult  `json:"recipients"`
+	Attempts             []Attempt          `json:"attempts"`
+	StructuredResult     map[string]any     `json:"structured_result"`
+	Summary              string             `json:"summary,omitempty"`
+	TaskCompleted        *bool              `json:"task_completed"`
+	CompletionConfidence *Confidence        `json:"completion_confidence"`
+	Evidence             []string           `json:"evidence"`
+	Metadata             map[string]any     `json:"metadata"`
+	FailureCode          string             `json:"failure_code,omitempty"`
+	FailureMessage       string             `json:"failure_message,omitempty"`
+	CreatedAt            time.Time          `json:"created_at"`
+	CompletedAt          *time.Time         `json:"completed_at"`
 }
 
 // RecipientResult is per-recipient state in a call task.
@@ -203,6 +209,172 @@ func (c *Client) dryRunCall(req *CreateCallRequest, idempotencyKey string) *Call
 		CompletionConfidence: &Confidence{Score: 0.99, Label: "high"},
 		Evidence:             []string{"Dry-run mode: fabricated terminal result."},
 		CreatedAt:            now,
+	}
+}
+
+// --- Goals API (reusable, versioned call workflows) ---
+
+// Goal is a published call workflow with typed input and result schemas.
+type Goal struct {
+	Object           string         `json:"object"`
+	ID               string         `json:"id"`
+	Title            string         `json:"title"`
+	Description      string         `json:"description"`
+	Status           string         `json:"status"`
+	PublishedRunSpec *RunSpec       `json:"published_run_spec"`
+}
+
+// RunSpec is the immutable, versioned interface pinned by a goal run.
+type RunSpec struct {
+	ID           string         `json:"id"`
+	Version      int            `json:"version"`
+	InputSchema  map[string]any `json:"input_schema"`
+	ResultSchema map[string]any `json:"result_schema"`
+}
+
+// GoalRun is one phone-specific execution of a published goal.
+type GoalRun struct {
+	Object      string         `json:"object"`
+	ID          string         `json:"id"`
+	GoalID      string         `json:"goal_id"`
+	RunID       string         `json:"run_id"`
+	CallID      string         `json:"call_id"`
+	RunSpec     RunSpec        `json:"run_spec"`
+	Status      string         `json:"status"`
+	Result      map[string]any `json:"result"`
+	Error       *GoalRunError  `json:"error"`
+	CreatedAt   time.Time      `json:"created_at"`
+	CompletedAt *time.Time     `json:"completed_at"`
+}
+
+// GoalRunError is a terminal execution error (e.g. no_answer).
+type GoalRunError struct {
+	Code       string `json:"code"`
+	Message    string `json:"message"`
+	DetailCode string `json:"detail_code,omitempty"`
+}
+
+// GoalList is a page of published goals.
+type GoalList struct {
+	Object     string `json:"object"`
+	Data       []Goal `json:"data"`
+	NextCursor string `json:"next_cursor"`
+}
+
+// ListGoals lists the caller's active published goals.
+func (c *Client) ListGoals(ctx context.Context) (*GoalList, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/v1/goals", nil)
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req, "")
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("calle goals %s: %s", resp.Status, truncate(raw, 400))
+	}
+	var list GoalList
+	if err := json.Unmarshal(raw, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// CreateGoalRun executes a published goal against one phone number.
+// variables are validated server-side against the goal's input schema.
+func (c *Client) CreateGoalRun(ctx context.Context, goalID, phone string, variables map[string]any, idempotencyKey string) (*GoalRun, error) {
+	body, err := json.Marshal(map[string]any{"phone": phone, "variables": variables})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/v1/goals/"+goalID+"/runs", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req, idempotencyKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("calle goal run %s: %s", resp.Status, truncate(raw, 400))
+	}
+	var run GoalRun
+	if err := json.Unmarshal(raw, &run); err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
+// GetGoalRun polls a goal run; poll until Result or Error is non-nil.
+func (c *Client) GetGoalRun(ctx context.Context, goalID, runID string) (*GoalRun, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/v1/goals/"+goalID+"/runs/"+runID, nil)
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req, "")
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("calle goal run %s: %s", resp.Status, truncate(raw, 400))
+	}
+	var run GoalRun
+	if err := json.Unmarshal(raw, &run); err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
+// CreateGoalCall places a call via a published goal (dry-run aware) and
+// projects the GoalRun into a CallTask so downstream handling is uniform.
+func (c *Client) CreateGoalCall(ctx context.Context, goalID, phone string, variables map[string]any, idempotencyKey string) (*GoalRun, error) {
+	if c.DryRun {
+		now := time.Now().UTC()
+		return &GoalRun{
+			Object: "goal_run", ID: "rgrp_dry_" + idempotencyKey, GoalID: goalID,
+			CallID: "call_dry_" + idempotencyKey, Status: "completed",
+			Result: map[string]any{"outcome": "unknown", "summary": "dry-run goal execution"},
+			CreatedAt: now, CompletedAt: &now,
+		}, nil
+	}
+	return c.CreateGoalRun(ctx, goalID, phone, variables, idempotencyKey)
+}
+
+// AsCallTask projects a goal run into the CallTask shape so the session and
+// outcome layers treat both API paths identically.
+func (r *GoalRun) AsCallTask() *CallTask {
+	status := r.Status
+	var result map[string]any
+	if r.Result != nil {
+		result = r.Result
+	}
+	failureCode, failureMsg := "", ""
+	if r.Error != nil {
+		failureCode, failureMsg = r.Error.Code, r.Error.Message
+		if status == "completed" {
+			status = "failed"
+		}
+	}
+	return &CallTask{
+		ID:               r.CallID,
+		Object:           "call_task",
+		Status:           status,
+		Task:             "goal:" + r.GoalID,
+		StructuredResult: result,
+		FailureCode:      failureCode,
+		FailureMessage:   failureMsg,
+		CreatedAt:        r.CreatedAt,
 	}
 }
 

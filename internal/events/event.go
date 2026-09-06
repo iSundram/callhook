@@ -13,9 +13,11 @@ type Event struct {
 	Type         string          `json:"type"`             // e.g. invoice.due, account.warning, promo.offer
 	CustomerID   string          `json:"customer_id"`      // binds the call session to one customer
 	Phone        string          `json:"phone"`            // E.164, optional if resolvable from customer
+	TZ           string          `json:"tz"`               // optional IANA timezone override (e.g. Asia/Kolkata)
 	Payload      json.RawMessage `json:"payload"`          // event-type-specific data
 	CallbackURL  string          `json:"callback_url"`     // where the structured outcome is POSTed back
 	Idempotency  string          `json:"idempotency_key"`  // dedupe key
+	NotBefore    string          `json:"not_before"`       // optional RFC3339 — don't call before this time
 	ReceivedAt   time.Time       `json:"received_at"`
 }
 

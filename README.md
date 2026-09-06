@@ -15,7 +15,8 @@ business app ──POST /api/events──► calle ──CALL-E API──► �
 ## How it works
 
 1. **Event in** — any system POSTs an event (`invoice.due`, `account.warning`,
-   `promo.offer`, ...). Idempotent: the same event never calls twice.
+   `promo.offer`, ...). Idempotent: the same event never calls twice, even
+   across server restarts.
 2. **Prefetch** — the full customer record (plan, invoice, payment history) is
    loaded *before* dialing and baked into the call task, so the voice agent
    never wastes seconds asking for account details.
@@ -26,23 +27,38 @@ business app ──POST /api/events──► calle ──CALL-E API──► �
    the call evidence (`payment_promised`, `claims_already_paid`, `no_answer`, ...).
 5. **Policy-gated actions** — unambiguous outcomes write to the business store
    (`mark_promise`); uncertain ones escalate to a human instead of acting.
+   Every action is audit-logged.
 6. **Loop closed** — the outcome, actions taken, transcript, and confidence
    are POSTed back to the originating system.
+
+## Operational guarantees
+
+| Guarantee | How |
+|---|---|
+| Never double-dial | Per-attempt idempotency keys + event dedup persisted across restarts |
+| Crash-safe | Append-only JSONL journal; sessions, armed retries and schedules replay on boot |
+| Polite hours | Calls and redials deferred to 9:00–20:00 recipient-local, weekdays (per-region timezone, overridable per event) |
+| Courtesy retries | `no_answer` redials up to 2 times; refusals and blocked/invalid numbers are never redialed |
+| Scheduled calls | `not_before` on any event parks it until the requested time |
+| Not forgeable | Webhook shared secret (`X-Calle-Secret`) + bearer-token intake (set both on a public tunnel) |
+| Flood-safe | Per-source rate limiting on event intake (60/min) |
 
 ## Quickstart
 
 ```bash
 # Dry-run mode (no API key needed — fabricates results, burns no balance):
-go run ./cmd/calle
+make run            # or: go run ./cmd/calle
 
 # Real calls:
 export CALLE_API_KEY=iams_live_...
 export CALLE_PUBLIC_URL=https://your-tunnel.example.com   # so CALL-E can reach /calle/webhook
+export CALLE_INTAKE_TOKEN=... CALLE_WEBHOOK_SECRET=...    # auth on a public tunnel
 go run ./cmd/calle
 ```
 
 Open the live dashboard at `http://localhost:8080/` — fire demo events with
-one click and watch the pipeline: event → prefetch → call → outcome → actions.
+one click and watch the pipeline: event → prefetch → call → outcome → actions
+→ transcript. `/api/metrics` serves aggregate stats.
 
 ## Fire an event
 
@@ -52,12 +68,22 @@ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{
   "type": "invoice.due",
   "customer_id": "cus_1002",
   "callback_url": "https://your-app.example.com/hooks/calle",
+  "not_before": "2026-09-07T14:00:00Z",
   "payload": {}
 }'
 ```
 
-→ returns `{status: "call_placed", call_id: ...}` immediately; the outcome
-lands on your callback URL when the call finishes.
+→ returns `{status: "call_placed" | "scheduled" | "deferred", call_id?...}`
+immediately; the outcome lands on your callback URL when the call finishes.
+Batch variant: `POST /api/events/batch` with `{"events": [...]}`.
+
+There is also a CLI:
+
+```bash
+go run ./cmd/callectl fire invoice.due cus_1002 --not-before 2026-09-07T14:00:00Z
+go run ./cmd/callectl sessions --watch
+go run ./cmd/callectl metrics
+```
 
 ### Supported events
 
@@ -73,14 +99,17 @@ Adding a new event type = one blueprint in `internal/events/router.go`
 ## Architecture
 
 ```
-cmd/calle/            entrypoint, config
-internal/api/         HTTP: POST /api/events, POST /calle/webhook, dashboard
+cmd/calle/            entrypoint, config, graceful shutdown
+cmd/callectl/         CLI client (fire, batch, sessions, metrics)
+internal/api/         HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting
 internal/events/      event schema + router (event type → call blueprint)
 internal/business/    business Store interface + mock (swap for your CRM/billing)
-internal/calleclient/ CALL-E Developer API client (docs/calle.openapi.yaml)
-internal/session/     session registry + audit log
-internal/outcome/     outcome engine: policy-gated writes, escalation, callback
-web/                  (dashboard is embedded in internal/api/dashboard.go)
+internal/calleclient/ CALL-E Developer API client: calls + Goals API (docs/calle.openapi.yaml)
+internal/session/     session registry + audit log + retry/schedule triggers
+internal/outcome/     outcome engine: policy-gated writes, escalation, retry policy, callback
+internal/retry/       scheduler: redials, calling-window deferrals, scheduled starts
+internal/callwindow/  polite-hours gate (region → timezone, 9:00–20:00 weekdays)
+internal/store/       crash-safe JSONL journal persistence
 ```
 
 - **Read/write separation:** prefetched context is *given* to the voice agent;
@@ -89,11 +118,31 @@ web/                  (dashboard is embedded in internal/api/dashboard.go)
 - **The mock store is the product surface:** implementing `business.Store`
   against a real CRM/billing API turns calle into a production integration.
 
+## Goals API (enterprise path)
+
+Besides free-text call tasks, CALL-E supports **Goals** — reusable, versioned
+call workflows with typed input and result schemas, published through their
+Chat product. calle supports both paths: set `GoalID` (and optionally
+`Variables`) on a blueprint and that event type executes the pinned,
+schema-validated goal instead of a composed task. Free-text tasks keep calle
+zero-setup and fully generic; Goals give enterprises versioned, governed
+workflows. The client implements `ListGoals`, `CreateGoalRun`, `GetGoalRun`.
+
+## What we deliberately did not build
+
+- **No extra LLM.** CALL-E's voice agent is the conversational brain. Task
+  composition is deterministic templates — a hallucinated amount or date
+  spoken on a call is a real failure, so calle's orchestration is auditable
+  code, not model output.
+- **No inbound calls / telephony.** That's CALL-E's job (~45 countries, IVR,
+  voicemail, transfer handling).
+
 ## Hackathon
 
 Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/)
 hackathon. CALL-E is genuinely called at runtime via the Developer API
-(`POST /v1/calls` with `result_schema`, terminal results via webhook).
+(`POST /v1/calls` with `result_schema`, terminal results via webhook; the
+Goals API is integrated as well).
 
 ## License
 

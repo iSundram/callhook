@@ -38,8 +38,11 @@ func (e *Engine) Apply(ev *calleclient.WebhookEvent) {
 	}
 
 	result := ev.Data.StructuredResult
-	e.Sessions.SetTerminal(ev.Data.ID, ev.Data.Status, result)
+	e.Sessions.SetTerminal(ev.Data.ID, ev.Data.Status, result, transcriptOf(ev.Data))
 	e.Sessions.Log(sess.ID, "call_terminal", "status="+ev.Data.Status+" type="+ev.Type)
+	if ev.Data.FailureCode != "" {
+		e.Sessions.Log(sess.ID, "call_failure_code", ev.Data.FailureCode+": "+ev.Data.FailureMessage)
+	}
 
 	// The action ladder: unambiguous → write, uncertain → escalate.
 	var actions []string
@@ -92,18 +95,30 @@ func (e *Engine) Apply(ev *calleclient.WebhookEvent) {
 			e.Sessions.Log(sess.ID, "retry_exhausted", "no answer on final attempt — leaving outcome as no_answer")
 		}
 	}
-
-	// Close the loop: POST the structured outcome back to the business.
 	if sess.Event.CallbackURL != "" {
 		e.postBack(sess, ev, actions)
 	}
 }
 
 func (e *Engine) retryable(ev *calleclient.WebhookEvent, outcomeVal, sessID string) bool {
-	if outcomeVal != "no_answer" && ev.Data.Status != "failed" {
-		return false
+	// Extracted outcome says nobody answered.
+	if outcomeVal == "no_answer" {
+		return e.Sessions.RetryState(sessID) < session.MaxRetries
 	}
-	return e.Sessions.RetryState(sessID) < session.MaxRetries
+	// The call itself failed. Retry transient reachability failures; never
+	// retry numbers that are blocked, invalid, out of region, or policy-
+	// violations — redialing those is pointless and abusive.
+	if ev.Data.Status == "failed" {
+		switch ev.Data.FailureCode {
+		case "recipient_blocked", "policy_violation", "invalid_phone", "unsupported_region", "recipient_unreachable_blocked":
+			return false
+		case "":
+			return false // unknown failure — don't burn attempts blindly
+		default:
+			return e.Sessions.RetryState(sessID) < session.MaxRetries
+		}
+	}
+	return false
 }
 
 func (e *Engine) postBack(sess *session.Session, ev *calleclient.WebhookEvent, actions []string) {

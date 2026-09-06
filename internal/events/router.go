@@ -16,6 +16,20 @@ type Blueprint struct {
 	Compose func(c *business.Customer, e *Event, s business.Store) (string, error)
 	// ResultSchema is the JSON Schema CALL-E extracts after the call.
 	ResultSchema map[string]any
+	// GoalID optionally pins this event type to a published CALL-E Goal
+	// (versioned workflow). When set, the goal path is used instead of the
+	// free-text task. See README "Goals".
+	GoalID string
+	// VariablesFor maps an event + customer to goal input variables.
+	Variables func(c *business.Customer, e *Event) map[string]any
+}
+
+// VariablesFor returns the goal input variables, or an empty map.
+func (b Blueprint) VariablesFor(c *business.Customer, e *Event) map[string]any {
+	if b.Variables == nil {
+		return map[string]any{}
+	}
+	return b.Variables(c, e)
 }
 
 // Router maps event types to blueprints. New event types are added here —
