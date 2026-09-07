@@ -59,10 +59,10 @@ type calendlyWebhook struct {
 func (a calendlyAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("CALENDLY_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("calendly", "CALENDLY_WEBHOOK_SECRET")
 	}
 	if !VerifyCalendly(secret, body, r.Header.Get("Calendly-Webhook-Signature")) {
-		return nil, ErrUnauthorized("invalid calendly signature")
+		return nil, ErrUnauthorizedDoc("invalid calendly signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var cw calendlyWebhook

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { DocsHint } from '../components/domain/DocsHint'
+import { DOCS } from '../lib/docs'
 
 export default function Connect() {
   const { connect } = useAuth()
@@ -38,10 +40,16 @@ export default function Connect() {
             <input className="input mono" type="password" value={token} onChange={e => setToken(e.target.value)} placeholder="CALLHOOK_INTAKE_TOKEN (if set)" />
             <div className="hint">Leave empty if your server has no intake token.</div>
           </div>
-          {err && <div className="pill err" style={{ marginBottom: 12 }}>{err}</div>}
+          {err && (
+            <div style={{ marginBottom: 12 }}>
+              <div className="pill err">{err}</div>
+              <DocsHint label="Connection help →" url={DOCS.tsConnect} />
+            </div>
+          )}
           <button className="btn primary" style={{ width: '100%' }} disabled={busy} onClick={submit}>
             {busy ? 'Connecting…' : 'Connect'}
           </button>
+          <DocsHint label="New here? Read the 60-second quickstart →" url={DOCS.quickstart} small />
         </div>
         <p className="faint" style={{ textAlign: 'center', fontSize: 11.5, marginTop: 14 }}>
           Fire a webhook. Your customer's phone rings.

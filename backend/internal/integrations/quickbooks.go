@@ -54,7 +54,7 @@ type qboNotification struct {
 func (a quickbooksAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	token := a.cfg.token()
 	if token == "" {
-		return nil, ErrUnauthorized("QUICKBOOKS_VERIFIER_TOKEN not configured")
+		return nil, ErrNotConfigured("quickbooks", "QUICKBOOKS_VERIFIER_TOKEN")
 	}
 	header := r.Header.Get("X-Intuit-Signature")
 	if header == "" {
@@ -62,7 +62,7 @@ func (a quickbooksAdapter) Handle(r *http.Request, body []byte) ([]Event, error)
 	}
 	// Multiple signatures can be listed; any one matching validates.
 	if !anyVerifyHexHMAC(token, body, header) {
-		return nil, ErrUnauthorized("invalid intuit signature")
+		return nil, ErrUnauthorizedDoc("invalid intuit signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var qn qboNotification

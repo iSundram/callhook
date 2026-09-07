@@ -44,9 +44,11 @@ func main() {
 	dryRun := apiKey == ""
 	if dryRun {
 		log.Printf("CALLHOOK_API_KEY not set — running in DRY-RUN mode (no real calls placed)")
+		log.Printf("docs: going live → https://callhook.github.io/pages/production.html#api-key")
 	}
 	if intakeToken == "" || webhookSecret == "" {
 		log.Printf("WARNING: CALLHOOK_INTAKE_TOKEN / CALLHOOK_WEBHOOK_SECRET not set — endpoints are UNAUTHENTICATED (fine locally, not on a public tunnel)")
+		log.Printf("docs: locking it down → https://callhook.github.io/pages/production.html#auth")
 	}
 
 	// Polite calling hours: defers calls/redials outside 9:00–20:00 local.
@@ -172,6 +174,7 @@ func main() {
 	}()
 
 	log.Printf("callhook %s listening on %s (dashboard: http://localhost%s/)", version, addr, addr)
+	log.Printf("docs: quickstart → https://callhook.github.io/pages/quickstart.html   troubleshooting → https://callhook.github.io/pages/troubleshooting.html")
 	log.Printf("supported events: %s", "invoice.due, account.warning, promo.offer, delivery.window, appointment.reminder, payment.failed, subscription.expiring, feedback.request")
 	log.Printf("intake: POST /api/events (+/batch)   campaigns: POST /api/campaigns   webhook: POST /callhook/webhook")
 	log.Printf("integrations: 19 platform adapters under POST /integrations/{platform}/webhook   catalog: GET /api/integrations")

@@ -82,11 +82,11 @@ func (a pipedriveAdapter) Handle(r *http.Request, body []byte) ([]Event, error) 
 	if wantUser != "" && wantPass != "" {
 		gotUser, gotPass, ok := parseBasicAuth(r.Header.Get("Authorization"))
 		if !ok || !VerifyBasic(gotUser, gotPass, wantUser, wantPass) {
-			return nil, ErrUnauthorized("invalid pipedrive basic auth")
+			return nil, ErrUnauthorizedDoc("invalid pipedrive basic auth", "/pages/integrations.html#troubleshooting")
 		}
 	} else if urlToken != "" {
 		if !stringsHasSuffixPath(r.URL.Path, urlToken) {
-			return nil, ErrUnauthorized("invalid pipedrive url token")
+			return nil, ErrUnauthorizedDoc("invalid pipedrive url token", "/pages/integrations.html#troubleshooting")
 		}
 	} else {
 		return nil, ErrUnauthorized("PIPEDRIVE_WEBHOOK_USER/PASSWORD or PIPEDRIVE_URL_TOKEN not configured")

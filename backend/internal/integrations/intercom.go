@@ -71,10 +71,10 @@ type intercomWebhook struct {
 func (a intercomAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("INTERCOM_CLIENT_SECRET not configured")
+		return nil, ErrNotConfigured("intercom", "INTERCOM_CLIENT_SECRET")
 	}
 	if !VerifySHA1HexHMAC(secret, body, r.Header.Get("X-Hub-Signature")) {
-		return nil, ErrUnauthorized("invalid intercom signature")
+		return nil, ErrUnauthorizedDoc("invalid intercom signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var iw intercomWebhook

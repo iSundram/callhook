@@ -41,10 +41,10 @@ func (slackAdapter) Platform() string { return "slack" }
 func (a slackAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("SLACK_SIGNING_SECRET not configured")
+		return nil, ErrNotConfigured("slack", "SLACK_SIGNING_SECRET")
 	}
 	if !VerifySlack(secret, body, r.Header.Get("X-Slack-Request-Timestamp"), r.Header.Get("X-Slack-Signature")) {
-		return nil, ErrUnauthorized("invalid slack signature")
+		return nil, ErrUnauthorizedDoc("invalid slack signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	form, err := url.ParseQuery(string(body))

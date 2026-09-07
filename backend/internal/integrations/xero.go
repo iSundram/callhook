@@ -62,11 +62,11 @@ type xeroWebhook struct {
 func (a xeroAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	key := a.cfg.key()
 	if key == "" {
-		return nil, ErrUnauthorized("XERO_WEBHOOK_KEY not configured")
+		return nil, ErrNotConfigured("xero", "XERO_WEBHOOK_KEY")
 	}
 	// Xero requires 401 on bad signature, 200 otherwise — matches our Handler.
 	if !VerifyBase64HMAC(key, body, r.Header.Get("X-Xero-Signature")) {
-		return nil, ErrUnauthorized("invalid xero signature")
+		return nil, ErrUnauthorizedDoc("invalid xero signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var xw xeroWebhook

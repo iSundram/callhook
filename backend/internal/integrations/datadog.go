@@ -99,7 +99,7 @@ func (a datadogAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 		authorized = ok && VerifyBasic(gotUser, gotPass, wantUser, wantPass)
 	}
 	if !authorized {
-		return nil, ErrUnauthorized("invalid datadog credentials")
+		return nil, ErrUnauthorizedDoc("invalid datadog credentials", "/pages/integrations.html#troubleshooting")
 	}
 
 	var dw datadogWebhook

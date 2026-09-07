@@ -5,6 +5,8 @@ import { api } from '../lib/api'
 import { timeAgo } from '../lib/format'
 import { useState } from 'react'
 import { OutcomeBadge } from '../components/domain/shared'
+import { DocsHint } from '../components/domain/DocsHint'
+import { DOCS } from '../lib/docs'
 import { EVENT_TYPES } from '../lib/events'
 
 export default function WarRoom() {

@@ -60,10 +60,10 @@ type typeformWebhook struct {
 func (a typeformAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("TYPEFORM_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("typeform", "TYPEFORM_WEBHOOK_SECRET")
 	}
 	if !VerifyBase64HMAC(secret, body, r.Header.Get("Typeform-Signature")) {
-		return nil, ErrUnauthorized("invalid typeform signature")
+		return nil, ErrUnauthorizedDoc("invalid typeform signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var tw typeformWebhook

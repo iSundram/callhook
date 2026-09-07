@@ -55,10 +55,10 @@ type stripeEvent struct {
 func (a stripeAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("STRIPE_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("stripe", "STRIPE_WEBHOOK_SECRET")
 	}
 	if !VerifyStripe(secret, body, r.Header.Get("Stripe-Signature")) {
-		return nil, ErrUnauthorized("invalid stripe signature")
+		return nil, ErrUnauthorizedDoc("invalid stripe signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var se stripeEvent

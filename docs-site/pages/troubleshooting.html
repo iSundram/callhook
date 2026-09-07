@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troubleshooting — callhook</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../css/style.css">
+
+</head>
+<body>
+
+<!-- Global Navigation -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="../index.html" class="nav-logo">
+        <img src="../assets/logo-full.svg" alt="callhook" class="logo-full" height="21">
+      </a>
+      <div class="nav-links">
+        <a href="quickstart.html">Quickstart</a>
+    <a href="install.html">Install</a>
+        <a href="api.html">API</a>
+        <a href="events.html">Events</a>
+        <a href="campaigns.html">Campaigns</a>
+        <a href="integrations.html">Integrations</a>
+        <a href="production.html" class="active">Production</a>
+        <a href="troubleshooting.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Troubleshooting
+        </a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="architecture.html">Architecture</a>
+      </div>
+    </div>
+    
+    <div class="nav-right">
+      <button class="search-btn" aria-label="Search documentation">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>Search</span>
+        <kbd>⌘K</kbd>
+      </button>
+
+      <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+
+      <a class="nav-gh-link" href="https://github.com/iSundram/callhook" target="_blank" rel="noopener" aria-label="GitHub Repository">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>GitHub</span>
+      </a>
+
+      <button class="icon-btn mobile-toggle" aria-label="Open mobile menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="mobile-overlay"></div>
+<aside class="mobile-drawer">
+  <div class="drawer-header">
+    <a href="../index.html" class="nav-logo">
+      <img src="../assets/logo-full.svg" alt="callhook" class="logo-full" height="21">
+    </a>
+    <button class="drawer-close" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="../index.html">Home</a>
+    <a href="quickstart.html">Quickstart</a>
+    <a href="install.html">Install</a>
+    <a href="api.html">API Reference</a>
+    <a href="events.html">Event Types</a>
+    <a href="campaigns.html">Campaigns</a>
+    <a href="integrations.html">Integrations</a>
+    <a href="production.html" class="active">Production</a>
+    <a href="architecture.html">Architecture</a>
+  </nav>
+</aside>
+
+<!-- 3-Column Documentation Layout -->
+<div class="docs-shell">
+  <!-- Left Navigation Sidebar -->
+  <aside class="docs-sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Getting Started</div>
+      <nav class="sidebar-nav">
+        <a href="quickstart.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Quickstart
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Reference</div>
+      <nav class="sidebar-nav">
+        <a href="api.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          API Reference
+        </a>
+        <a href="events.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          Event Types
+        </a>
+        <a href="campaigns.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          Campaigns
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-heading">Operations &amp; Deep Dives</div>
+      <nav class="sidebar-nav">
+        <a href="production.html" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Production
+        </a>
+        <a href="architecture.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Architecture
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Center Main Content -->
+<div class="docs-main">
+    <div class="breadcrumbs">
+      <a href="../index.html">Docs</a>
+      <span class="sep">/</span>
+      <span>Troubleshooting</span>
+    </div>
+
+    <div class="page-header">
+      <h1>Troubleshooting</h1>
+      <p>Stuck somewhere? Every common failure with its fix. API and webhook-adapter errors carry a <code>docs</code> field pointing at the section that explains them.</p>
+    </div>
+
+    <h2 id="connect">The war room won't connect</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause &amp; fix</th></tr></thead>
+        <tbody>
+          <tr><td>"could not reach server"</td><td>Server not running, or wrong URL. Start it: <code>cd backend &amp;&amp; go run ./cmd/callhook</code> (or the released binary) and connect to <code>http://localhost:8080</code>. → <a href="quickstart.html">Quickstart</a></td></tr>
+          <tr><td>"invalid or missing bearer token"</td><td>The server has <code>CALLHOOK_INTAKE_TOKEN</code> set; paste the same token on the Connect screen. → <a href="production.html#auth">Production → Lock it down</a></td></tr>
+          <tr><td>Connects, but "DRY-RUN" badge everywhere</td><td>Not an error — no <code>CALLHOOK_API_KEY</code> means fabricated calls, zero cost, full pipeline. → <a href="production.html#api-key">Going live</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="webhook-401">Platform webhook returns 401</h2>
+    <p>Every adapter verifies the platform's own signature. A 401 body looks like <code>{"error":"STRIPE_WEBHOOK_SECRET not configured","docs":"https://callhook.github.io/..."}</code> — the <code>docs</code> field is the fix.</p>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;ENV_VAR&gt; not configured</code></td><td>Set the adapter's secret (e.g. <code>STRIPE_WEBHOOK_SECRET=whsec_...</code>) and restart. Per-platform steps: <a href="integrations.html#native-adapters">Native adapters</a> + <code>integrations/&lt;platform&gt;/README.md</code> in the repo.</td></tr>
+          <tr><td><code>invalid ... signature</code></td><td>The secret doesn't match what the platform sends — re-copy it from the platform's <em>webhook settings</em>, not the API key. Watch hex vs base64: Shopify/WooCommerce/Xero/Typeform are base64; GitHub/Stripe/Calendly/Paddle are hex.</td></tr>
+          <tr><td>HubSpot: correct secret, still invalid</td><td>Behind a tunnel the signed URI is the public one. Set <code>HUBSPOT_EXTERNAL_BASE_URL=https://your-tunnel.example.com</code> and restart. → <a href="production.html#auth">Production</a></td></tr>
+          <tr><td>Stripe/Slack worked before, now 401</td><td>Replay window: signatures older than 5 minutes are rejected. Sync your clock (NTP). Secret rotation: during the overlap both signatures are accepted only if both secrets are valid — v1 lists support this; otherwise wait out the window.</td></tr>
+          <tr><td>SNS: "cert url host must be *.amazonaws.com"</td><td>SigningCertURL failed validation — message tampered or misconfigured. Also confirm the subscription (<code>SNS_AUTO_SUBSCRIBE=true</code> or click the SubscribeURL in the delivery logs).</td></tr>
+          <tr><td>Chargebee/Pipedrive: 401 with correct credentials</td><td>They use HTTP Basic auth, not HMAC. The username/password must be the ones configured in <em>their</em> webhook settings screens — not API keys.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="events">POST /api/events errors</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>type is required</code> / <code>customer_id is required</code> / <code>id is required</code></td><td>All three are mandatory fields. → <a href="api.html#post-events">API → POST /api/events</a></td></tr>
+          <tr><td><code>unsupported event type</code></td><td>The response lists <code>supported_types</code> — use one of the 8 blueprints. → <a href="events.html">Event Types</a></td></tr>
+          <tr><td><code>customer ... not found</code></td><td>Demo store knows <code>cus_1001</code>–<code>cus_1003</code> and <code>cus_2001</code>–<code>cus_2030</code>. For real data implement <code>business.Store</code>. → <a href="architecture.html#adapters">Store adapters</a></td></tr>
+          <tr><td><code>phone must be E.164 format</code></td><td>Numbers start with <code>+</code> and country code, e.g. <code>+14155550002</code>. → <a href="api.html#post-events">API</a></td></tr>
+          <tr><td><code>{"status":"duplicate"}</code></td><td>Not an error — the event id was seen before (idempotency). New call → new <code>id</code>.</td></tr>
+          <tr><td><code>{"status":"deferred"}</code></td><td>Not an error — outside calling hours (9:00–20:00 recipient-local, weekdays); dials automatically at the next window.</td></tr>
+          <tr><td id="blueprint"><code>prefetch invoice: no open invoice</code></td><td>The blueprint's Compose step needs data the store doesn't have — an <code>invoice.due</code> needs an open invoice for that customer. → <a href="events.html#custom-events">Blueprint contract</a></td></tr>
+          <tr><td><code>not_before must be RFC3339</code></td><td>Use ISO-8601/RFC3339 like <code>2026-09-08T09:00:00Z</code>. → <a href="api.html#post-events">API</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="no-calls">Events fire, but no calls happen</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Check</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Dry-run mode?</td><td><code>GET /api/health</code> → <code>dry_run: true</code> means calls are fabricated on purpose (no balance spent) — sessions still complete. → <a href="production.html#api-key">Going live</a></td></tr>
+          <tr><td>Outside calling hours?</td><td>Sessions show <code>call_deferred</code> in the audit trail; they dial at the next window. For testing: <code>CALLHOOK_ENFORCE_WINDOWS=false</code>.</td></tr>
+          <tr><td>Real mode + <code>call_failed</code>?</td><td>CALL-E rejected the call — check <code>CALLHOOK_API_KEY</code> and <code>CALLHOOK_PUBLIC_URL</code> (CALL-E must reach <code>/callhook/webhook</code>). → <a href="production.html#api-key">Production</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="campaigns">Campaign problems</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause &amp; fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>audience is empty</code></td><td><code>all_overdue</code> found no customers with open invoices. Pass an explicit <code>audience</code> list, or fix store data. → <a href="campaigns.html">Campaigns</a></td></tr>
+          <tr><td><code>goal.target must be &gt; 0</code></td><td>Count goals need a target. → <a href="campaigns.html#create">Create a campaign</a></td></tr>
+          <tr><td>Running, but no waves launch</td><td>Wave <code>delay</code> hasn't elapsed (Go duration: <code>"15m"</code>). The pump ticks every <code>CALLHOOK_RETRY_TICK</code> (default 15s).</td></tr>
+          <tr><td>Everyone marked skipped</td><td>The goal was met — early-stop is the feature. → <a href="campaigns.html#lifecycle">Lifecycle &amp; early-stop</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="install">Install / startup problems</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>port :8080 already in use</code></td><td><code>CALLHOOK_ADDR=:9090</code>; connect the war room to the new port.</td></tr>
+          <tr><td>Journal replay errors on boot</td><td><code>data/sessions.jsonl</code> is append-only; corrupt tail lines are skipped. Delete only if history doesn't matter. → <a href="production.html#persistence">Persistence</a></td></tr>
+          <tr><td><code>go: go.mod file not found</code></td><td>Run from <code>backend/</code> (module root), not the repo root.</td></tr>
+          <tr><td>Dashboard 404 / blank page</td><td>Binary built without the web app — <code>make full</code> in <code>backend/</code> embeds it, or use the release binary. → <a href="install.html">Install</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="where-docs">Where everything lives</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Question</th><th>Doc</th></tr></thead>
+        <tbody>
+          <tr><td>How do I start?</td><td><a href="quickstart.html">Quickstart</a> · <a href="install.html">Install</a></td></tr>
+          <tr><td>What can I fire at it?</td><td><a href="events.html">Event Types</a> · <a href="api.html">API Reference</a></td></tr>
+          <tr><td>How do platform webhooks plug in?</td><td><a href="integrations.html#native-adapters">Integrations → Native adapters</a></td></tr>
+          <tr><td>How do campaigns work?</td><td><a href="campaigns.html">Campaigns</a></td></tr>
+          <tr><td>How do I go live / secure it?</td><td><a href="production.html">Production Guide</a></td></tr>
+          <tr><td>How is it built inside?</td><td><a href="architecture.html">Architecture</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prevnext">
+      <a href="integrations.html" class="prevnext-card">
+        <span class="direction">← Previous</span>
+        <span class="title">Integrations</span>
+      </a>
+      <a href="architecture.html" class="prevnext-card next">
+        <span class="direction">Next →</span>
+        <span class="title">Architecture</span>
+      </a>
+    </div>
+  </main>
+
+  <!-- Right On This Page TOC -->
+  <aside class="docs-toc">
+    <div class="toc-title">On this page</div>
+    <ul class="toc-list">
+      <li><a href="#connect" class="toc-link">War room won't connect</a></li>
+      <li><a href="#webhook-401" class="toc-link">Platform webhook 401</a></li>
+      <li><a href="#events" class="toc-link">POST /api/events errors</a></li>
+      <li><a href="#no-calls" class="toc-link">No calls happen</a></li>
+      <li><a href="#campaigns" class="toc-link">Campaign problems</a></li>
+      <li><a href="#install" class="toc-link">Install / startup</a></li>
+      <li><a href="#where-docs" class="toc-link">Where everything lives</a></li>
+    </ul>
+
+    <div class="toc-utilities">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/troubleshooting.html" target="_blank" rel="noopener" class="toc-util-link">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Edit on GitHub
+      </a>
+      <a href="#connect" class="toc-util-link">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Back to top
+      </a>
+    </div>
+  </aside>
+</div>
+
+
+<footer>
+  <img src="../assets/wordmark-tight.svg" alt="callhook" class="footer-logo" height="15">
+  <p>event-driven AI phone calls · MIT</p>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

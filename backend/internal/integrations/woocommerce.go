@@ -51,10 +51,10 @@ type wooOrder struct {
 func (a wooCommerceAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("WOOCOMMERCE_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("woocommerce", "WOOCOMMERCE_WEBHOOK_SECRET")
 	}
 	if !VerifyBase64HMAC(secret, body, r.Header.Get("X-WC-Webhook-Signature")) {
-		return nil, ErrUnauthorized("invalid woocommerce signature")
+		return nil, ErrUnauthorizedDoc("invalid woocommerce signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var order wooOrder

@@ -24,6 +24,11 @@
         <a href="campaigns.html">Campaigns</a>
         <a href="integrations.html">Integrations</a>
         <a href="production.html">Production</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="troubleshooting.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Troubleshooting
+        </a>
         <a href="architecture.html">Architecture</a>
       </div>
     </div>
@@ -71,7 +76,8 @@
     <a href="campaigns.html">Campaigns</a>
     <a href="integrations.html">Integrations</a>
     <a href="production.html">Production</a>
-    <a href="architecture.html">Architecture</a>
+    <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="architecture.html">Architecture</a>
   </nav>
 </aside>
 
@@ -182,7 +188,17 @@ $ go run ./cmd/callhookctl metrics</code></pre>
     <h2 id="going-live">5. Going live</h2>
     <p>Dry-run proves the pipeline. For real phone calls, all you change is the environment — see <a href="production.html">Production</a>.</p>
 
-    <div class="prevnext">
+    
+    <div class="callout">
+      <div class="callout-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      </div>
+      <div>
+        <b>Where next?</b> Point a platform webhook at it (<a href="integrations.html#native-adapters">19 native adapters</a>), wire your own system (<a href="api.html">API</a>), go live (<a href="production.html">Production</a>) — and if anything misbehaves: <a href="troubleshooting.html">Troubleshooting</a>.
+      </div>
+    </div>
+
+<div class="prevnext">
       <a href="../index.html" class="prevnext-card">
         <span class="direction">← Previous</span>
         <span class="title">Home</span>

@@ -1,5 +1,7 @@
 import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
+import { DocsHint } from '../components/domain/DocsHint'
+import { DOCS } from '../lib/docs'
 
 const ENV_DOCS: [string, string, string][] = [
   ['CALLHOOK_API_KEY', '—', 'CALL-E key. Empty = dry-run mode.'],
@@ -45,10 +47,18 @@ export default function Settings() {
           <div style={{ marginTop: 16 }}>
             <button className="btn danger" onClick={disconnect}>Disconnect</button>
           </div>
-          {health?.dry_run && (
-            <p className="faint" style={{ fontSize: 12, marginTop: 14 }}>
-              Dry-run: the full pipeline runs with fabricated calls — set CALLHOOK_API_KEY to go live.
-            </p>
+          {health?.dry_run ? (
+            <div style={{ marginTop: 14 }}>
+              <p className="faint" style={{ fontSize: 12 }}>
+                Dry-run: the full pipeline runs with fabricated calls — set CALLHOOK_API_KEY to go live.
+              </p>
+              <DocsHint label="Going live: the one env var →" url={DOCS.apiKey} small />
+            </div>
+          ) : (
+            health && <DocsHint label="Live mode — production checklist →" url={DOCS.production} small />
+          )}
+          {health && (!health.auth_intake || !health.auth_webhook) && (
+            <DocsHint label="Endpoints are unauthenticated — lock it down →" url={DOCS.auth} small />
           )}
         </div>
 

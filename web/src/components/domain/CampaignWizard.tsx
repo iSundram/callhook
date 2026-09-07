@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { ErrorDocsHint } from './DocsHint'
 import { EVENT_TYPES, eventDef } from '../../lib/events'
 
 // Per-type presets: name + goal sized to the type's natural success outcome.
@@ -152,7 +153,12 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
         </div>
       </div>
 
-      {err && <div className="pill err" style={{ marginBottom: 10 }}>{err}</div>}
+      {err && (
+        <div style={{ marginBottom: 10 }}>
+          <div className="pill err">{err}</div>
+          <ErrorDocsHint message={err} />
+        </div>
+      )}
       <button className="btn primary" disabled={busy} onClick={create}>
         {busy ? 'Launching…' : 'Launch campaign'}
       </button>

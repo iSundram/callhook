@@ -68,13 +68,13 @@ type chargebeeWebhook struct {
 func (a chargebeeAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	wantUser, wantPass := a.cfg.user(), a.cfg.pass()
 	if wantUser == "" || wantPass == "" {
-		return nil, ErrUnauthorized("CHARGEBEE_WEBHOOK_USER/PASSWORD not configured")
+		return nil, ErrNotConfigured("chargebee", "CHARGEBEE_WEBHOOK_USER/PASSWORD")
 	}
 
 	// Verify HTTP Basic auth (Authorization: Basic base64(user:pass)).
 	gotUser, gotPass, ok := parseBasicAuth(r.Header.Get("Authorization"))
 	if !ok || !VerifyBasic(gotUser, gotPass, wantUser, wantPass) {
-		return nil, ErrUnauthorized("invalid chargebee basic auth")
+		return nil, ErrUnauthorizedDoc("invalid chargebee basic auth", "/pages/integrations.html#troubleshooting")
 	}
 
 	var cw chargebeeWebhook

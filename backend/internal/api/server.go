@@ -210,7 +210,8 @@ func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	ev.ReceivedAt = time.Now().UTC()
 
 	if err := ev.Validate(); err != nil {
-		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{
+			"error": err.Error(), "docs": "/pages/api.html#post-events"}}
 	}
 
 	// Idempotency: the same event must never trigger two calls.
@@ -225,14 +226,17 @@ func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	blueprint, ok := s.Router.Blueprint(ev.Type)
 	if !ok {
 		err := fmt.Errorf("unsupported event type: %s", ev.Type)
-		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error(), "supported_types": s.Router.Supported()}}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{
+			"error": err.Error(), "supported_types": s.Router.Supported(),
+			"docs": "/pages/events.html"}}
 	}
 
 	// Prefetch: resolve the full customer record BEFORE dialing, so the call
 	// task contains live business data and mid-call lookups hit cache.
 	customer, err := s.Store.GetCustomer(ev.CustomerID)
 	if err != nil {
-		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{
+			"error": err.Error(), "docs": "/pages/architecture.html#adapters"}}
 	}
 	phone := ev.Phone
 	if phone == "" {
@@ -240,12 +244,14 @@ func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	}
 	if !strings.HasPrefix(phone, "+") {
 		err := fmt.Errorf("phone must be E.164 format (start with +)")
-		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{
+			"error": err.Error(), "docs": "/pages/api.html#post-events"}}
 	}
 
 	task, err := blueprint.Compose(customer, ev, s.Store)
 	if err != nil {
-		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{
+			"error": err.Error(), "docs": "/pages/troubleshooting.html#blueprint"}}
 	}
 
 	sess := s.Sessions.Create(ev.ID, *ev, customer)
@@ -262,7 +268,8 @@ func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	if ev.NotBefore != "" {
 		nb, err := time.Parse(time.RFC3339, ev.NotBefore)
 		if err != nil {
-			return EventResult{Status: "error", Err: err, Body: map[string]any{"error": "not_before must be RFC3339"}}
+			return EventResult{Status: "error", Err: err, Body: map[string]any{
+				"error": "not_before must be RFC3339", "docs": "/pages/api.html#post-events"}}
 		}
 		s.Sessions.DeferUntil(sess.ID, nb.UTC(), session.KindScheduled)
 		s.Sessions.Log(sess.ID, "call_scheduled", "not before "+nb.Format(time.RFC3339))
@@ -274,7 +281,7 @@ func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	if err != nil {
 		s.Sessions.Log(sess.ID, "call_failed", err.Error())
 		return EventResult{Status: "error", SessionID: sess.ID, Err: err,
-			Body: map[string]any{"error": "callhook: " + err.Error()}}
+			Body: map[string]any{"error": "callhook: " + err.Error(), "docs": "/pages/production.html#api-key"}}
 	}
 	if !placed {
 		return EventResult{Status: "deferred", SessionID: sess.ID, Phone: phone,

@@ -223,6 +223,13 @@
     { title: 'Integrations: business.Store adapters', cat: 'Integrations', url: '/pages/integrations.html#adapters' },
     { title: 'Integrations: SSE stream', cat: 'Integrations', url: '/pages/integrations.html#sse' },
     { title: 'GET /api/integrations (catalog)', cat: 'API', url: '/pages/api.html#get-integrations' },
+
+    { title: 'Troubleshooting: War room connect', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#connect' },
+    { title: 'Troubleshooting: Webhook 401 / invalid signature', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#webhook-401' },
+    { title: 'Troubleshooting: POST /api/events errors', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#events' },
+    { title: 'Troubleshooting: No calls happening', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#no-calls' },
+    { title: 'Troubleshooting: Campaign problems', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#campaigns' },
+    { title: 'Troubleshooting: Install / startup', cat: 'Troubleshooting', url: '/pages/troubleshooting.html#install' },
     { title: 'Event Blueprint: delivery.window', cat: 'Events', url: '/pages/events.html#delivery-window' },
     { title: 'Event Blueprint: appointment.reminder', cat: 'Events', url: '/pages/events.html#appointment-reminder' },
     { title: 'Event Blueprint: payment.failed', cat: 'Events', url: '/pages/events.html#payment-failed' },

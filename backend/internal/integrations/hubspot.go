@@ -58,7 +58,7 @@ type hubspotPayload struct {
 func (a hubspotAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("HUBSPOT_CLIENT_SECRET not configured")
+		return nil, ErrNotConfigured("hubspot", "HUBSPOT_CLIENT_SECRET")
 	}
 
 	sig := r.Header.Get("X-HubSpot-Signature-V3")
@@ -66,7 +66,7 @@ func (a hubspotAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 		// Legacy v1 fallback: plain SHA-256 hex of secret + body.
 		v1 := r.Header.Get("X-HubSpot-Signature")
 		if v1 == "" || !VerifyHubSpotV1(secret, body, v1) {
-			return nil, ErrUnauthorized("invalid hubspot signature")
+			return nil, ErrUnauthorizedDoc("invalid hubspot signature", "/pages/integrations.html#troubleshooting")
 		}
 	} else {
 		// Reconstruct the exact URI HubSpot signed: scheme://host + path.
@@ -82,7 +82,7 @@ func (a hubspotAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 		}
 		if !VerifyHubSpotV3(secret, r.Method, uri, body,
 			r.Header.Get("X-HubSpot-Request-Timestamp"), sig) {
-			return nil, ErrUnauthorized("invalid hubspot signature")
+			return nil, ErrUnauthorizedDoc("invalid hubspot signature", "/pages/integrations.html#troubleshooting")
 		}
 	}
 

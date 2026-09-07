@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import { EVENT_TYPES, eventDef } from '../lib/events'
+import { DocsHint, ErrorDocsHint } from '../components/domain/DocsHint'
+import { DOCS } from '../lib/docs'
 
 export default function Fire() {
   const { baseUrl, token } = useAuth()
@@ -68,11 +70,19 @@ export default function Fire() {
           <button className="btn primary" disabled={busy} onClick={fire}>
             {busy ? 'Firing…' : 'Fire event'}
           </button>
-          {err && <div className="pill err" style={{ marginTop: 12 }}>{err}</div>}
+          {err && (
+            <div style={{ marginTop: 12 }}>
+              <div className="pill err">{err}</div>
+              <ErrorDocsHint message={err} />
+            </div>
+          )}
           {result && (
             <div style={{ marginTop: 16 }}>
               <span className={`pill ${result.status === 'error' ? 'err' : 'ok'}`}>{result.status}</span>
               {result.call_id && <pre className="code" style={{ marginTop: 10 }}>{JSON.stringify(result, null, 2)}</pre>}
+              {result.status === 'deferred' && <DocsHint label="Why deferred? Calling hours →" url={DOCS.tsNoCalls} small />}
+              {result.status === 'scheduled' && <DocsHint label="not_before explained →" url={DOCS.apiEvents} small />}
+              {result.status === 'error' && <ErrorDocsHint message={String(result.error || 'event error')} body={result} />}
             </div>
           )}
         </div>
@@ -83,6 +93,7 @@ export default function Fire() {
             <p className="muted" style={{ fontSize: 13, margin: '8px 0' }}>{info.desc}</p>
             <div className="section-title" style={{ marginTop: 14, marginBottom: 6 }}>Structured outcomes</div>
             <p className="mono" style={{ fontSize: 12, color: 'var(--brand-silver)' }}>{info.outcomes.join(' · ')}</p>
+            <DocsHint label="Full blueprint docs →" url={DOCS.events} small />
           </div>
           <div className="card" style={{ marginTop: 14 }}>
             <strong>Tip</strong>

@@ -59,14 +59,14 @@ type pagerdutyWebhook struct {
 func (a pagerdutyAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("PAGERDUTY_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("pagerduty", "PAGERDUTY_WEBHOOK_SECRET")
 	}
 	sig := r.Header.Get("X-PagerDuty-Signature")
 	if sig == "" {
 		return nil, ErrUnauthorized("missing X-PagerDuty-Signature")
 	}
 	if !VerifyHexHMAC(secret, body, sig) {
-		return nil, ErrUnauthorized("invalid pagerduty signature")
+		return nil, ErrUnauthorizedDoc("invalid pagerduty signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var pwr pagerdutyWebhook

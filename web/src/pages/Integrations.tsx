@@ -1,6 +1,8 @@
 import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
+import { DocsHint } from '../components/domain/DocsHint'
+import { DOCS } from '../lib/docs'
 
 // The live integrations catalog, served by the backend
 // (GET /api/integrations) — platform, route, env vars, signature scheme,
@@ -89,6 +91,7 @@ export default function Integrations() {
           delivery takes. See <span className="mono">integrations/&lt;platform&gt;/README.md</span> in
           the repo for each platform's dashboard setup steps.
         </p>
+        <DocsHint label="Webhook 401 or invalid signature? Troubleshooting →" url={DOCS.tsWebhook401} small />
       </div>
 
       <div className="card" style={{ marginTop: 18 }}>
@@ -100,6 +103,7 @@ export default function Integrations() {
           function-calling, Airtable and Google Forms recipes ship in{' '}
           <span className="mono">plugins/</span> and <span className="mono">integrations/</span>.
         </p>
+        <DocsHint label="Full integration docs →" url={DOCS.nativeAdapters} small />
       </div>
     </div>
   )

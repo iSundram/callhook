@@ -59,14 +59,14 @@ type githubPayload struct {
 func (a githubAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("GITHUB_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("github", "GITHUB_WEBHOOK_SECRET")
 	}
 	sig := r.Header.Get("X-Hub-Signature-256")
 	if sig == "" {
 		return nil, ErrUnauthorized("missing X-Hub-Signature-256 (no secret configured on the hook?)")
 	}
 	if !VerifyHexHMAC(secret, body, sig) {
-		return nil, ErrUnauthorized("invalid github signature")
+		return nil, ErrUnauthorizedDoc("invalid github signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	event := r.Header.Get("X-GitHub-Event")

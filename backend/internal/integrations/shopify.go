@@ -52,10 +52,10 @@ type shopifyOrder struct {
 func (a shopifyAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("SHOPIFY_API_SECRET not configured")
+		return nil, ErrNotConfigured("shopify", "SHOPIFY_API_SECRET")
 	}
 	if !VerifyBase64HMAC(secret, body, r.Header.Get("X-Shopify-Hmac-Sha256")) {
-		return nil, ErrUnauthorized("invalid shopify signature")
+		return nil, ErrUnauthorizedDoc("invalid shopify signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	// The webhook topic is in the X-Shopify-Topic header; body is the object.

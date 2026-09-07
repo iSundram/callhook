@@ -66,10 +66,10 @@ type paddleWebhook struct {
 func (a paddleAdapter) Handle(r *http.Request, body []byte) ([]Event, error) {
 	secret := a.cfg.secret()
 	if secret == "" {
-		return nil, ErrUnauthorized("PADDLE_WEBHOOK_SECRET not configured")
+		return nil, ErrNotConfigured("paddle", "PADDLE_WEBHOOK_SECRET")
 	}
 	if !VerifyPaddle(secret, body, r.Header.Get("Paddle-Signature"), a.cfg.tolerance()) {
-		return nil, ErrUnauthorized("invalid paddle signature")
+		return nil, ErrUnauthorizedDoc("invalid paddle signature", "/pages/integrations.html#troubleshooting")
 	}
 
 	var pw paddleWebhook
