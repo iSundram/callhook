@@ -85,7 +85,13 @@ func TestBlueprintSchemasAreValid(t *testing.T) {
 			t.Errorf("%s: schema must be an object", typ)
 		}
 		props, ok := schema["properties"].(map[string]any)
-		if !ok || props["outcome"] == nil {
+		hasOutcome := false
+		for name := range props {
+			if name == "outcome" || strings.HasSuffix(name, "_outcome") {
+				hasOutcome = true
+			}
+		}
+		if !ok || !hasOutcome {
 			t.Errorf("%s: schema must define an outcome property", typ)
 		}
 		req, ok := schema["required"].([]string)

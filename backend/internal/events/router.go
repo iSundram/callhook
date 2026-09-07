@@ -40,9 +40,14 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{blueprints: map[string]Blueprint{
-		"invoice.due":    invoiceDue(),
-		"account.warning": accountWarning(),
-		"promo.offer":    promoOffer(),
+		"invoice.due":          invoiceDue(),
+		"account.warning":      accountWarning(),
+		"promo.offer":          promoOffer(),
+		"delivery.window":      deliveryWindow(),
+		"appointment.reminder": appointmentReminder(),
+		"payment.failed":       paymentFailed(),
+		"subscription.expiring": subscriptionExpiring(),
+		"feedback.request":     feedbackRequest(),
 	}}
 }
 
@@ -52,7 +57,11 @@ func (r *Router) Blueprint(eventType string) (Blueprint, bool) {
 }
 
 func (r *Router) Supported() []string {
-	return []string{"invoice.due", "account.warning", "promo.offer"}
+	return []string{
+		"invoice.due", "account.warning", "promo.offer",
+		"delivery.window", "appointment.reminder", "payment.failed",
+		"subscription.expiring", "feedback.request",
+	}
 }
 
 // ---- invoice.due ----
