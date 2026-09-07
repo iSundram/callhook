@@ -153,6 +153,30 @@ Campaign API: `POST /api/campaigns` (create+start) · `GET /api/campaigns[/{id}]
 Adding a new event type = one blueprint in `internal/events/router.go`
 (task composer + result schema). Everything else is generic.
 
+## Integrations — any platform, one webhook bridge
+
+**19 webhook adapters** ship built-in, each verifying the platform's
+signature exactly per its official docs (stdlib only, zero deps):
+Stripe, Slack, Shopify, HubSpot, PagerDuty, GitHub, Calendly, Typeform,
+WooCommerce, Xero, QuickBooks, Paddle, Grafana, Datadog, Intercom,
+Chargebee, Pipedrive, AWS SNS (full RSA cert verification), and the
+generic HTTP fallback. Plus outbound packages: an **n8n community
+node**, a **Zapier app**, agent tools for **OpenAI function-calling,
+LangChain, AutoGen/CrewAI**, recipes for Salesforce/Airtable/Google
+Forms, and a built-in **MCP server** (`POST /mcp`).
+
+```bash
+# Stripe: dashboard webhook → /integrations/stripe/webhook
+STRIPE_WEBHOOK_SECRET=whsec_...
+callhookctl test-webhook stripe    # signed fixture, end-to-end proof
+```
+
+The war room's **Integrations** page shows every platform, its route,
+env vars, and live configured status (`GET /api/integrations`).
+Full catalog + setup guides: **[INTEGRATIONS.md](INTEGRATIONS.md)** and
+[`integrations/`](integrations/) — per-platform dashboard steps, env
+vars, event mapping, and test commands.
+
 ## Architecture
 
 ```
@@ -169,6 +193,9 @@ backend/          Go server (see backend/README.md)
   internal/retry/       scheduler: redials, calling-window deferrals, scheduled starts
   internal/callwindow/  polite-hours gate (region → timezone, 9:00–20:00 weekdays)
   internal/store/       crash-safe JSONL journal persistence
+  internal/integrations/ 19 platform webhook adapters (doc-verified signatures)
+integrations/      per-platform setup guides + recipes (Apex, Apps Script, agent tools)
+plugins/           n8n community node + Zapier app
 web/              frontend application (in progress)
 docs-site/        documentation source (deployed to callhook.github.io)
 assets/           logo & brand assets

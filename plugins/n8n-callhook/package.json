@@ -1,0 +1,20 @@
+{
+  "name": "n8n-nodes-callhook",
+  "version": "1.0.0",
+  "description": "n8n community node: fire AI phone calls via callhook",
+  "keywords": ["n8n-community-node-package", "callhook", "phone", "voice", "ai"],
+  "license": "MIT",
+  "main": "nodes/Callhook/Callhook.node.js",
+  "n8n": {
+    "nodes": ["nodes/Callhook/Callhook.node.js"],
+    "credentials": ["credentials/CallhookApi.credentials.js"]
+  },
+  "files": ["nodes", "credentials"],
+  "devDependencies": {
+    "typescript": "~5.8.2"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  }
+}

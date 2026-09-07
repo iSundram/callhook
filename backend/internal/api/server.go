@@ -15,6 +15,7 @@ import (
 	"github.com/iSundram/callhook/internal/callwindow"
 	"github.com/iSundram/callhook/internal/campaign"
 	"github.com/iSundram/callhook/internal/events"
+	"github.com/iSundram/callhook/internal/integrations"
 	"github.com/iSundram/callhook/internal/mcp"
 	"github.com/iSundram/callhook/internal/outcome"
 	"github.com/iSundram/callhook/internal/session"
@@ -47,6 +48,9 @@ type Server struct {
 	MCP *mcp.Server
 	// Stream is the SSE broker for /api/stream (live war-room updates).
 	Stream *Broker
+	// Integrations, when set, holds the platform webhook adapter registry
+	// (Stripe, Slack, Shopify, ... 19 platforms) — see integrations.go.
+	Integrations *integrations.Registry
 
 	limiter     *rateLimiter
 	routesCache http.Handler
@@ -88,6 +92,8 @@ func (s *Server) Routes() http.Handler {
 	if s.MCP != nil {
 		mux.HandleFunc("POST /mcp", s.cors(s.authIntake(s.handleMCP)))
 	}
+	// Platform webhook adapters: POST /integrations/{platform}/webhook.
+	s.integrationsRoutes(mux)
 	mux.HandleFunc("GET /", s.handleRoot)
 
 	// OPTIONS preflight must be answered before Go's method-based routing

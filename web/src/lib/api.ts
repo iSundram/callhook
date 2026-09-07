@@ -35,4 +35,6 @@ export const api = {
     request<any>(c, '/api/events', { method: 'POST', body: JSON.stringify(body) }),
   fireBatch: (c: Conn, events: any[]) =>
     request<any>(c, '/api/events/batch', { method: 'POST', body: JSON.stringify({ events }) }),
+
+  integrations: (c: Conn) => request<any>(c, '/api/integrations'),
 }

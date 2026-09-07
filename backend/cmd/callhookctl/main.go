@@ -8,6 +8,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -36,6 +39,8 @@ func main() {
 		sessions(base, args)
 	case "metrics":
 		metrics(base)
+	case "test-webhook":
+		testWebhook(base, args)
 	default:
 		usage()
 	}
@@ -121,6 +126,52 @@ func metrics(base string) {
 	printJSON(get(base + "/api/metrics"))
 }
 
+// testWebhook signs a fixture payload with the platform's real signature
+// scheme and POSTs it to the running server's adapter endpoint — the
+// quickest way to prove an integration works end-to-end.
+//
+//	callhookctl test-webhook stripe   # uses STRIPE_WEBHOOK_SECRET if set
+func testWebhook(base string, args []string) {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "usage: callhookctl test-webhook <stripe|generic>")
+		os.Exit(1)
+	}
+	platform := args[0]
+
+	switch platform {
+	case "stripe":
+		secret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+		if secret == "" {
+			fmt.Fprintln(os.Stderr, "set STRIPE_WEBHOOK_SECRET first")
+			os.Exit(1)
+		}
+		body := []byte(`{"id":"evt_cli_test","type":"invoice.payment_failed","data":{"object":{"customer":"cus_1002","amount_due":4900,"currency":"usd","attempt_count":1}}}`)
+		ts := time.Now().Unix()
+		mac := hmac.New(sha256.New, []byte(secret))
+		mac.Write([]byte(fmt.Sprintf("%d.", ts)))
+		mac.Write(body)
+		sig := fmt.Sprintf("t=%d,v1=%s", ts, hex.EncodeToString(mac.Sum(nil)))
+
+		req, _ := http.NewRequest(http.MethodPost, base+"/integrations/stripe/webhook", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Stripe-Signature", sig)
+		fmt.Println(string(doReq(req)))
+
+	case "generic":
+		body := []byte(`{"id":"evt_cli_test","type":"invoice.due","customer_id":"cus_1002"}`)
+		req, _ := http.NewRequest(http.MethodPost, base+"/integrations/generic/webhook", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if tok := os.Getenv("GENERIC_BEARER_TOKEN"); tok != "" {
+			req.Header.Set("Authorization", "Bearer "+tok)
+		}
+		fmt.Println(string(doReq(req)))
+
+	default:
+		fmt.Fprintf(os.Stderr, "no fixture for platform %q yet — try: stripe, generic\n", platform)
+		os.Exit(1)
+	}
+}
+
 func post(url, token string, body []byte) []byte {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
@@ -183,6 +234,7 @@ usage:
   callhookctl batch <events.json>
   callhookctl sessions [--watch]
   callhookctl metrics
+  callhookctl test-webhook <stripe|generic>
 
 env:
   CALLHOOK_URL          server base URL (default http://localhost:8080)

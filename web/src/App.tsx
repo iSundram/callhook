@@ -10,6 +10,7 @@ import SessionDetail from './pages/SessionDetail'
 import Campaigns from './pages/Campaigns'
 import CampaignDetail from './pages/CampaignDetail'
 import Fire from './pages/Fire'
+import Integrations from './pages/Integrations'
 import Settings from './pages/Settings'
 
 function Gate() {
@@ -32,6 +33,7 @@ function Gate() {
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/campaigns/:id" element={<CampaignDetail />} />
           <Route path="/fire" element={<Fire />} />
+          <Route path="/integrations" element={<Integrations />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

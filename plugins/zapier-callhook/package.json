@@ -1,0 +1,17 @@
+{
+  "name": "callhook-zapier",
+  "version": "1.0.0",
+  "description": "Zapier app: fire AI phone calls via callhook from any Zap",
+  "main": "index.js",
+  "license": "MIT",
+  "zapier": {
+    "platformVersion": ">=15.0.0 <16.0.0"
+  },
+  "scripts": {
+    "validate": "zapier validate",
+    "push": "zapier push"
+  },
+  "dependencies": {
+    "zapier-platform": "15.5.1"
+  }
+}

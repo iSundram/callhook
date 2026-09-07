@@ -130,7 +130,7 @@
 
     <div class="page-header">
       <h1>Integrations</h1>
-      <p>Five surfaces, one contract: if your system can make an HTTP request, it can place phone calls. No per-platform plugins to maintain — the webhook IS the integration.</p>
+      <p>Six surfaces, one contract: if your system can make an HTTP request, it can place phone calls — and 19 platforms get native, signature-verified adapters out of the box.</p>
     </div>
 
     <h2 id="webhooks">1. Webhooks in — any system, zero plugins</h2>
@@ -147,7 +147,41 @@ Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;
 }</code></pre>
     <p>Typical wiring: <strong>Stripe</strong> → failed-payment webhook → callhook <code>payment.failed</code>. <strong>Shopify</strong> → fulfillment event → <code>delivery.window</code>. <strong>Your CRM</strong> → overdue job → <code>invoice.due</code>. <strong>Calendly-style bookings</strong> → <code>appointment.reminder</code> with <code>not_before</code>.</p>
 
-    <h2 id="callbacks">2. Outcome callbacks — the loop closes</h2>
+    <h2 id="native-adapters">2. Native adapters — the platforms call you directly</h2>
+    <p>Prefer zero glue code? 19 platform adapters ship in the binary: point the platform's <em>native</em> webhook at <code>/integrations/&lt;platform&gt;/webhook</code> and callhook verifies the platform's own signature scheme — checked line-by-line against each vendor's docs — then maps the payload to the right event type. Stdlib only, zero dependencies.</p>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Platform</th><th>Route</th><th>Verification (per official docs)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Stripe</td><td><code>/integrations/stripe/webhook</code></td><td><code>Stripe-Signature</code> t=.body HMAC-SHA256, 5-min replay window</td></tr>
+          <tr><td>Slack</td><td><code>/integrations/slack/slash</code></td><td><code>X-Slack-Signature</code> v0:ts:body HMAC-SHA256</td></tr>
+          <tr><td>Shopify</td><td><code>/integrations/shopify/webhook</code></td><td><code>X-Shopify-Hmac-Sha256</code> base64 HMAC-SHA256</td></tr>
+          <tr><td>HubSpot</td><td><code>/integrations/hubspot/webhook</code></td><td><code>X-HubSpot-Signature-V3</code> method+URI+body+ts HMAC-SHA256</td></tr>
+          <tr><td>PagerDuty</td><td><code>/integrations/pagerduty/webhook</code></td><td><code>X-PagerDuty-Signature</code> HMAC-SHA256</td></tr>
+          <tr><td>GitHub</td><td><code>/integrations/github/webhook</code></td><td><code>X-Hub-Signature-256</code> sha256= HMAC-SHA256 (their test vector passes)</td></tr>
+          <tr><td>Calendly</td><td><code>/integrations/calendly/webhook</code></td><td><code>Calendly-Webhook-Signature</code> t=.body HMAC-SHA256</td></tr>
+          <tr><td>Typeform</td><td><code>/integrations/typeform/webhook</code></td><td><code>Typeform-Signature</code> sha256= base64 HMAC-SHA256</td></tr>
+          <tr><td>WooCommerce</td><td><code>/integrations/woocommerce/webhook</code></td><td><code>X-WC-Webhook-Signature</code> base64 HMAC-SHA256 (matches plugin source)</td></tr>
+          <tr><td>Xero</td><td><code>/integrations/xero/webhook</code></td><td><code>X-Xero-Signature</code> base64 HMAC-SHA256, 200/401 intent</td></tr>
+          <tr><td>QuickBooks</td><td><code>/integrations/quickbooks/webhook</code></td><td><code>X-Intuit-Signature</code> hex HMAC-SHA256</td></tr>
+          <tr><td>Paddle</td><td><code>/integrations/paddle/webhook</code></td><td><code>Paddle-Signature</code> ts;h1 HMAC-SHA256 of ts:body</td></tr>
+          <tr><td>Grafana</td><td><code>/integrations/grafana/webhook</code></td><td><code>X-Grafana-Alerting-Signature</code> hex HMAC-SHA256</td></tr>
+          <tr><td>Datadog</td><td><code>/integrations/datadog/webhook</code></td><td>shared-secret header / basic auth (Datadog doesn't sign)</td></tr>
+          <tr><td>Intercom</td><td><code>/integrations/intercom/webhook</code></td><td><code>X-Hub-Signature</code> sha1= hex HMAC-SHA1</td></tr>
+          <tr><td>Chargebee</td><td><code>/integrations/chargebee/webhook</code></td><td>HTTP Basic auth (webhook settings)</td></tr>
+          <tr><td>Pipedrive</td><td><code>/integrations/pipedrive/webhook</code></td><td>HTTP Basic auth or URL token</td></tr>
+          <tr><td>AWS SNS</td><td><code>/integrations/sns/webhook</code></td><td>full RSA cert verification (SigV2), CloudWatch alarms auto-mapped</td></tr>
+          <tr><td>Generic HTTP</td><td><code>/integrations/generic/webhook</code></td><td>bearer / shared-secret — callhook event JSON passthrough</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Unconfigured platforms answer <code>401</code> loudly on every delivery. The war-room <strong>Integrations</strong> page shows live status (<code>GET /api/integrations</code>). Per-platform setup guides (dashboard steps, env vars, mappings): <a href="https://github.com/iSundram/callhook/tree/main/integrations"><code>integrations/</code></a> in the repo. Outbound packages ship too: an <strong>n8n community node</strong>, a <strong>Zapier app</strong>, agent tools for <strong>OpenAI / LangChain / AutoGen / CrewAI</strong>, and recipes for Salesforce, Airtable and Google Forms.</p>
+    <pre><code><span class="cm"># prove an integration end-to-end, no platform account needed:</span>
+$ callhookctl test-webhook stripe <span class="cm"># signs a real fixture, fires the pipeline</span></code></pre>
+
+    <h2 id="callbacks">3. Outcome callbacks — the loop closes</h2>
     <p>When each call finishes, the structured outcome POSTs back to your <code>callback_url</code>:</p>
     <pre><code>{
   <span class="st">"event_id"</span>:   <span class="st">"evt_stripe_8472"</span>,
@@ -158,13 +192,13 @@ Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;
 }</code></pre>
     <p>Your system updates its own records — the conversation's result lands where your business logic lives. Verify authenticity with the shared <code>X-Callhook-Secret</code> header pattern on your side, and dedupe by <code>event_id</code> (we deliver once; redeliveries carry the same id).</p>
 
-    <h2 id="mcp">3. MCP — AI agents operate the voice channel</h2>
+    <h2 id="mcp">4. MCP — AI agents operate the voice channel</h2>
     <p>Point any MCP client (Claude Code, Cursor, agents) at <code>POST /mcp</code>. Six tools: <code>fire_event</code>, <code>launch_campaign</code>, <code>get_campaign</code>, <code>list_sessions</code>, <code>list_event_types</code>, <code>run_demo</code>.</p>
     <pre><code><span class="cm"># Claude Code / any MCP client:</span>
 &gt; "Collect 5 payment promises from the overdue list"
 → agent calls launch_campaign → waves fire → early-stop at the goal</code></pre>
 
-    <h2 id="adapters">4. business.Store — your CRM/billing adapter</h2>
+    <h2 id="adapters">5. business.Store — your CRM/billing adapter</h2>
     <p>The mock store ships for demos; production implements one interface against your real systems — customers, invoices, promises, escalations, contact history. Read tools feed the call context; writes land only from structured outcomes, policy-gated and audit-logged.</p>
     <pre><code><span class="kw">type</span> Store <span class="kw">interface</span> {
     GetCustomer(id <span class="kw">string</span>) (*Customer, error)
@@ -175,7 +209,7 @@ Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;
     RecordContact(customerID, channel, outcome <span class="kw">string</span>) error
 }</code></pre>
 
-    <h2 id="sse">5. SSE stream — live in your own tooling</h2>
+    <h2 id="sse">6. SSE stream — live in your own tooling</h2>
     <p><code>GET /api/stream</code> pushes every session and campaign mutation as Server-Sent Events — wire your own dashboards, alerting, or analytics to the live feed.</p>
 
     <div class="callout">
@@ -203,6 +237,7 @@ Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;
       <div class="toc-title">On this page</div>
       <ul class="toc-list">
         <li><a href="#webhooks" class="toc-link">Webhooks in</a></li>
+        <li><a href="#native-adapters" class="toc-link">Native adapters</a></li>
         <li><a href="#callbacks" class="toc-link">Outcome callbacks</a></li>
         <li><a href="#mcp" class="toc-link">MCP</a></li>
         <li><a href="#adapters" class="toc-link">Store adapters</a></li>
