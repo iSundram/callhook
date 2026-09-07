@@ -5,10 +5,12 @@ package outcome
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/iSundram/callhook/internal/business"
@@ -23,18 +25,50 @@ type Engine struct {
 	Client   *http.Client
 	// RetryDelay is how long to wait before redialing an unanswered customer.
 	RetryDelay time.Duration
+	// FetchCall, when set, is used to enrich terminal results: CALL-E's
+	// webhook payload can omit transcript turns, so we re-GET the call.
+	FetchCall func(ctx context.Context, callID string) (*callhookclient.CallTask, error)
+	// calle base URL — set when FetchCall is nil to build a default fetcher.
+
+	seenMu   sync.Mutex
+	seenEvt  map[string]bool // webhook event-id dedup (CALL-E retries deliveries)
 }
 
 func New(st business.Store, sessions *session.Store) *Engine {
-	return &Engine{Store: st, Sessions: sessions, Client: &http.Client{Timeout: 10 * time.Second}, RetryDelay: 2 * time.Hour}
+	return &Engine{Store: st, Sessions: sessions, Client: &http.Client{Timeout: 10 * time.Second}, RetryDelay: 2 * time.Hour, seenEvt: map[string]bool{}}
 }
 
 // Apply processes one terminal webhook event from CALL-E.
 func (e *Engine) Apply(ev *callhookclient.WebhookEvent) {
+	// Dedupe by CALL-E's event id — they redeliver, and a redelivery must
+	// never double-apply business actions.
+	e.seenMu.Lock()
+	if ev.ID != "" && e.seenEvt[ev.ID] {
+		e.seenMu.Unlock()
+		return
+	}
+	e.seenEvt[ev.ID] = true
+	e.seenMu.Unlock()
+
 	sess, ok := e.Sessions.FindByCallID(ev.Data.ID)
 	if !ok {
 		log.Printf("outcome: no session for call %s — ignoring", ev.Data.ID)
 		return
+	}
+
+	// Enrich: the webhook payload may omit transcript turns; re-GET the call
+	// for the full record when we can.
+	if len(transcriptOf(ev.Data)) == 0 && e.FetchCall != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		if full, err := e.FetchCall(ctx, ev.Data.ID); err == nil && full != nil {
+			if len(transcriptOf(*full)) > 0 {
+				ev.Data.Attempts = full.Attempts
+			}
+			if ev.Data.StructuredResult == nil && full.StructuredResult != nil {
+				ev.Data.StructuredResult = full.StructuredResult
+			}
+		}
+		cancel()
 	}
 
 	result := ev.Data.StructuredResult

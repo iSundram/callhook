@@ -81,6 +81,7 @@ func main() {
 	client := callhookclient.New(apiKey, baseURL)
 	client.DryRun = dryRun
 	outcomes := outcome.New(storeB, sessions)
+	outcomes.FetchCall = client.GetCall // enrich webhook payloads with full call (transcripts)
 	outcomes.RetryDelay = retryDelay
 
 	srv := &api.Server{
