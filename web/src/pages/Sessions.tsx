@@ -37,7 +37,19 @@ export default function Sessions() {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {filtered.length === 0 ? (
+        {sessions === null ? (
+          <div style={{ padding: 20 }} aria-busy="true">
+            {[0, 1, 2, 3, 4].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0' }}>
+                <div className="skeleton" style={{ height: 12, width: '18%' }} />
+                <div className="skeleton" style={{ height: 12, width: '14%' }} />
+                <div className="skeleton" style={{ height: 12, width: '12%' }} />
+                <div className="skeleton" style={{ height: 12, width: '16%' }} />
+                <div className="skeleton" style={{ height: 12, width: '14%', marginLeft: 'auto' }} />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="empty">no sessions match</div>
         ) : (
           <table className="tbl">

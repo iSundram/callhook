@@ -71,6 +71,18 @@ export default function WarRoom() {
         </div>
       )}
 
+      {!metrics && !metricsErr && (
+        <div className="stat-grid" aria-busy="true">
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} className="card stat">
+              <div className="skeleton" style={{ height: 12, width: '55%', marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 26, width: '38%' }} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {metrics && (
       <div className="stat-grid">
         <div className="card stat">
           <div className="label">Sessions</div>
@@ -95,6 +107,7 @@ export default function WarRoom() {
           <div className="sub">{campaigns?.length ?? 0} total</div>
         </div>
       </div>
+      )}
 
       <div className="grid2">
         <div className="card">
@@ -102,7 +115,18 @@ export default function WarRoom() {
             <strong>Live activity</strong>
             <Link to="/sessions" className="faint" style={{ fontSize: 12 }}>all sessions →</Link>
           </div>
-          {recent.length === 0 && (
+          {recent.length === 0 && sessions === null && (
+            <div aria-busy="true">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div className="skeleton" style={{ height: 12, width: '22%' }} />
+                  <div className="skeleton" style={{ height: 12, width: '30%' }} />
+                  <div className="skeleton" style={{ height: 12, width: '18%', marginLeft: 'auto' }} />
+                </div>
+              ))}
+            </div>
+          )}
+          {recent.length === 0 && sessions !== null && (
             <div className="empty">
               nothing yet<br />
               <button className="btn primary" style={{ marginTop: 14 }} disabled={demoBusy} onClick={runDemo}>

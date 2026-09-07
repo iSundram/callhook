@@ -1,21 +1,25 @@
 // Typed client for the callhook backend API.
+import { track } from './loading'
 
 export type Conn = { baseUrl: string; token: string }
 
 async function request<T>(conn: Conn, path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (conn.token) headers['Authorization'] = `Bearer ${conn.token}`
-  const res = await fetch(`${conn.baseUrl.replace(/\/$/, '')}${path}`, {
-    ...init,
-    headers: { ...headers, ...(init?.headers as any) },
+  // Every request is tracked: the top progress bar + dim reflect it.
+  return track(async () => {
+    const res = await fetch(`${conn.baseUrl.replace(/\/$/, '')}${path}`, {
+      ...init,
+      headers: { ...headers, ...(init?.headers as any) },
+    })
+    const body = await res.text()
+    let data: any = null
+    try { data = body ? JSON.parse(body) : null } catch { /* non-JSON */ }
+    if (!res.ok) {
+      throw new Error(data?.error || `HTTP ${res.status}`)
+    }
+    return data as T
   })
-  const body = await res.text()
-  let data: any = null
-  try { data = body ? JSON.parse(body) : null } catch { /* non-JSON */ }
-  if (!res.ok) {
-    throw new Error(data?.error || `HTTP ${res.status}`)
-  }
-  return data as T
 }
 
 export const api = {

@@ -259,3 +259,25 @@ pre.code {
 @media (max-width: 900px) {
   .menu-btn { display: inline-flex; }
 }
+
+/* ---------- global loading: top progress bar + content dim ---------- */
+.load-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100;
+  background: transparent; pointer-events: none;
+  opacity: 0; transition: opacity .18s ease;
+}
+.load-bar.on { opacity: 1; }
+.load-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--warning), var(--brand-silver));
+  border-radius: 0 2px 2px 0;
+}
+.load-bar.on .load-bar-fill { animation: loadbar 1.4s ease-in-out infinite; }
+@keyframes loadbar {
+  0%   { width: 0%;   opacity: 1; }
+  50%  { width: 72%;  opacity: 1; }
+  100% { width: 92%;  opacity: .75; }
+}
+/* Content recedes (never hides) while loading. */
+.dimmed { opacity: .45; filter: saturate(.6); pointer-events: none;
+  transition: opacity .2s ease, filter .2s ease; }

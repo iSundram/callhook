@@ -24,7 +24,14 @@ export default function Campaigns() {
         <CampaignWizard onCreated={c => setData([c, ...(campaigns || [])])} />
       </div>
 
-      {(campaigns || []).length === 0 && <div className="empty">no campaigns yet — launch your first one above</div>}
+      {campaigns === null && (
+        <div style={{ padding: 20 }} aria-busy="true">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="skeleton" style={{ height: 92, marginBottom: 14 }} />
+          ))}
+        </div>
+      )}
+      {campaigns !== null && campaigns.length === 0 && <div className="empty">no campaigns yet — launch your first one above</div>}
 
       {(campaigns || []).map(c => {
         const target = c.goal.type === 'count' ? c.goal.target : c.audience.length

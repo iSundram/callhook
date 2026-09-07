@@ -47,7 +47,18 @@ export default function Integrations() {
             signature schemes verified against each platform's official docs
           </span>
         </div>
-        {list.length === 0 && <div className="empty">catalog unavailable — is the server up to date?</div>}
+        {data === null && (
+          <div aria-busy="true">
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div className="skeleton" style={{ height: 12, width: '14%' }} />
+                <div className="skeleton" style={{ height: 12, width: '24%' }} />
+                <div className="skeleton" style={{ height: 12, width: '30%', marginLeft: 'auto' }} />
+              </div>
+            ))}
+          </div>
+        )}
+        {data !== null && list.length === 0 && <div className="empty">catalog unavailable — is the server up to date?</div>}
         {list.map((i: any) => (
           <div key={i.platform} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <div className="spread" style={{ alignItems: 'baseline' }}>

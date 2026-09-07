@@ -1,18 +1,23 @@
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { Outlet } from 'react-router-dom'
 import Header from './Header'
 import Sidebar from './Sidebar'
+import LoadingBar from './LoadingBar'
+import { subscribeLoading, isLoading } from '../../lib/loading'
 
 export default function AppShell({ children }: { children?: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const loading = useSyncExternalStore(subscribeLoading, isLoading)
 
   return (
     <div className="app-shell">
+      <LoadingBar />
       <Sidebar />
       <div className="app-main">
         <Header onMenu={() => setDrawerOpen(true)} />
-        <div className="app-content">{children || <Outlet />}</div>
+        {/* Dim everything while data loads — content stays visible, just recedes. */}
+        <div className={`app-content ${loading ? 'dimmed' : ''}`}>{children || <Outlet />}</div>
       </div>
 
       {drawerOpen && (
