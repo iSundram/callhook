@@ -228,3 +228,24 @@ pre.code {
 .connect-card { width: 380px; }
 .connect-card .logo { display: flex; justify-content: center; margin-bottom: 20px; }
 .connect-card .logo img { width: 56px; height: 51px; }
+
+/* ---------- mobile drawer ---------- */
+.menu-btn {
+  display: none; background: transparent; border: 1px solid var(--border-subtle);
+  color: var(--text-primary); width: 32px; height: 32px; border-radius: var(--radius-md);
+  align-items: center; justify-content: center; cursor: pointer;
+}
+.menu-btn:hover { background: var(--bg-elevated); }
+.drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 90; }
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 95;
+  background: var(--bg-surface); border-right: 1px solid var(--border-medium);
+  overflow-y: auto; animation: drawerin .2s ease;
+}
+.drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 8px; }
+.drawer-logo { height: 18px; width: auto; }
+.drawer .sidebar { display: block; width: 100%; height: auto; position: static; border-right: none; }
+@keyframes drawerin { from { transform: translateX(-240px); } }
+@media (max-width: 900px) {
+  .menu-btn { display: inline-flex; }
+}
