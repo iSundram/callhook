@@ -217,9 +217,12 @@
     { title: 'Campaign API endpoints', cat: 'Campaigns', url: '/pages/campaigns.html#api' },
 
     { title: 'Integrations: Webhooks in', cat: 'Integrations', url: '/pages/integrations.html#webhooks' },
+    { title: 'Integrations: Native adapters (Stripe, Slack, Shopify, GitHub, SNS…)', cat: 'Integrations', url: '/pages/integrations.html#native-adapters' },
     { title: 'Integrations: Outcome callbacks', cat: 'Integrations', url: '/pages/integrations.html#callbacks' },
     { title: 'Integrations: MCP agents', cat: 'Integrations', url: '/pages/integrations.html#mcp' },
     { title: 'Integrations: business.Store adapters', cat: 'Integrations', url: '/pages/integrations.html#adapters' },
+    { title: 'Integrations: SSE stream', cat: 'Integrations', url: '/pages/integrations.html#sse' },
+    { title: 'GET /api/integrations (catalog)', cat: 'API', url: '/pages/api.html#get-integrations' },
     { title: 'Event Blueprint: delivery.window', cat: 'Events', url: '/pages/events.html#delivery-window' },
     { title: 'Event Blueprint: appointment.reminder', cat: 'Events', url: '/pages/events.html#appointment-reminder' },
     { title: 'Event Blueprint: payment.failed', cat: 'Events', url: '/pages/events.html#payment-failed' },

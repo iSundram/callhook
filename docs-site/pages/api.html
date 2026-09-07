@@ -172,6 +172,23 @@
   <h2 id="stream"><span class="badge-method get">GET</span> /api/stream</h2>
   <p>Server-Sent Events: <code>session</code> and <code>campaign</code> events pushed on every mutation. The war room's live updates ride this stream; polling is the fallback. With auth on, pass the token as <code>?token=</code> (EventSource cannot send headers).</p>
 
+  <h2 id="get-integrations"><span class="badge-method get">GET</span> /api/integrations</h2>
+  <p>The platform-adapter catalog with live configuration status — this is what the war-room Integrations page renders.</p>
+  <pre><code>{
+  <span class="st">"integrations"</span>: [
+    {
+      <span class="st">"platform"</span>: <span class="st">"stripe"</span>,
+      <span class="st">"route"</span>: <span class="st">"/integrations/stripe/webhook"</span>,
+      <span class="st">"env_vars"</span>: [<span class="st">"STRIPE_WEBHOOK_SECRET"</span>],
+      <span class="st">"verified"</span>: <span class="st">"Stripe-Signature: t=.body HMAC-SHA256 hex, 5-min replay window"</span>,
+      <span class="st">"doc_url"</span>: <span class="st">"https://docs.stripe.com/webhooks"</span>,
+      <span class="st">"env_configured"</span>: true,
+      ...
+    }, ... <span class="cm">// 19 platforms</span>
+  ]
+}</code></pre>
+  <p>Platform webhooks POST directly to <code>/integrations/&lt;platform&gt;/webhook</code> — see <a href="integrations.html#native-adapters">Integrations → Native adapters</a>.</p>
+
   <h2 id="get-sessions"><span class="badge-method get">GET</span> /api/sessions</h2>
     <p>All sessions with their state, audit trail, outcome and transcript. This is what the dashboard renders.</p>
 
@@ -217,6 +234,9 @@
       <li><a href="#post-events" class="toc-link">POST /api/events</a></li>
       <li><a href="#post-batch" class="toc-link">POST /api/events/batch</a></li>
       <li><a href="#post-webhook" class="toc-link">POST /callhook/webhook</a></li>
+      <li><a href="#mcp" class="toc-link">POST /mcp</a></li>
+      <li><a href="#stream" class="toc-link">GET /api/stream</a></li>
+      <li><a href="#get-integrations" class="toc-link">GET /api/integrations</a></li>
       <li><a href="#get-sessions" class="toc-link">GET /api/sessions</a></li>
       <li><a href="#get-metrics" class="toc-link">GET /api/metrics</a></li>
       <li><a href="#get-health" class="toc-link">GET /api/health</a></li>
