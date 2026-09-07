@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quickstart — callhook</title>
+  <title>Campaigns — callhook</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icon-tight.svg">
   <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -18,10 +18,10 @@
         <span>callhook</span>
       </a>
       <div class="nav-links">
-        <a href="quickstart.html" class="active">Quickstart</a>
+        <a href="quickstart.html">Quickstart</a>
         <a href="api.html">API</a>
         <a href="events.html">Events</a>
-        <a href="campaigns.html">Campaigns</a>
+        <a href="campaigns.html" class="active">Campaigns</a>
         <a href="production.html">Production</a>
         <a href="architecture.html">Architecture</a>
       </div>
@@ -64,10 +64,10 @@
   </div>
   <nav class="sidebar-nav">
     <a href="../index.html">Home</a>
-    <a href="quickstart.html" class="active">Quickstart</a>
+    <a href="quickstart.html">Quickstart</a>
     <a href="api.html">API Reference</a>
     <a href="events.html">Event Types</a>
-    <a href="campaigns.html">Campaigns</a>
+    <a href="campaigns.html" class="active">Campaigns</a>
     <a href="production.html">Production</a>
     <a href="architecture.html">Architecture</a>
   </nav>
@@ -80,7 +80,7 @@
     <div class="sidebar-group">
       <div class="sidebar-heading">Getting Started</div>
       <nav class="sidebar-nav">
-        <a href="quickstart.html" class="active">
+        <a href="quickstart.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           Quickstart
         </a>
@@ -98,7 +98,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           Event Types
         </a>
-        <a href="campaigns.html">
+        <a href="campaigns.html" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
           Campaigns
         </a>
@@ -125,90 +125,106 @@
     <div class="breadcrumbs">
       <a href="../index.html">Docs</a>
       <span class="sep">/</span>
-      <span>Quickstart</span>
+      <span>Campaigns</span>
     </div>
 
     <div class="page-header">
-      <h1>Quickstart</h1>
-      <p>From zero to a working pipeline in 60 seconds — no API key, no phone calls, no balance.</p>
+      <h1>Campaigns</h1>
+      <p>Goal-driven calling: declare a goal and an audience, and callhook orchestrates waves of calls that stop the moment the goal is met — never wasting a call.</p>
     </div>
 
-    <h2 id="run-callhook">1. Run callhook</h2>
-    <p>Grab a release binary (Linux/macOS/Windows, amd64/arm64) or build from source:</p>
-    <pre><code><span class="cm"># from a release — https://github.com/iSundram/callhook/releases</span>
-$ curl -L https://github.com/iSundram/callhook/releases/latest/download/callhook_linux_amd64.tar.gz | tar xz
-$ ./callhook_linux_amd64/callhook
+    <h2 id="what">The idea</h2>
+    <p>One event → one call is the primitive. A <strong>campaign</strong> wraps that primitive in a goal: <em>"collect 5 payment promises from the overdue list."</em> callhook launches waves, tracks every outcome, requeues unanswered customers, and <strong>early-stops</strong> the instant the goal is achieved — everyone not yet called is skipped, and the call budget stays unspent.</p>
 
-<span class="cm"># or from source</span>
-$ git clone https://github.com/iSundram/callhook && cd callhook
-$ <span class="hl">go run ./cmd/callhook</span>
+    <h2 id="create">Create a campaign</h2>
+    <pre><code>curl -X POST localhost:8080/api/campaigns -H 'Content-Type: application/json' -d '{
+  <span class="st">"name"</span>: <span class="st">"September collections"</span>,
+  <span class="st">"event_type"</span>: <span class="st">"invoice.due"</span>,
+  <span class="st">"goal"</span>:   { <span class="st">"type"</span>: <span class="st">"count"</span>, <span class="st">"target"</span>: 5,
+               <span class="st">"success_outcomes"</span>: [<span class="st">"payment_promised"</span>] },
+  <span class="st">"audience_source"</span>: <span class="st">"all_overdue"</span>,
+  <span class="st">"waves"</span>:  { <span class="st">"size"</span>: 3, <span class="st">"delay"</span>: <span class="st">"15m"</span>, <span class="st">"max_waves"</span>: 5 },
+  <span class="st">"budget"</span>: { <span class="st">"max_calls"</span>: 40 }
+}'</code></pre>
+    <p>Returns the campaign immediately; waves launch on the scheduler. Watch it live in the dashboard — progress bar, wave log, per-recipient states.</p>
 
-CALLHOOK_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
-callhook dev listening on :8080 (dashboard: http://localhost:8080/)
-supported events: invoice.due, account.warning, promo.offer
-retries: redial after 2h, up to 2 retries | windows: true</code></pre>
-    <p>No <code>CALLHOOK_API_KEY</code>? callhook runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>event_type</code></td><td>string · required</td><td>Any blueprint type (<code>invoice.due</code>, <code>promo.offer</code>, ...) — the campaign fires these events.</td></tr>
+          <tr><td><code>goal.type</code></td><td><code>count</code> | <code>reach_all</code></td><td><code>count</code> needs N successes; <code>reach_all</code> needs every audience member reached.</td></tr>
+          <tr><td><code>goal.success_outcomes</code></td><td>[]string</td><td>Which outcomes count as success. Defaults to the common success outcomes.</td></tr>
+          <tr><td><code>audience</code></td><td>list</td><td>Explicit audience: <code>[{"customer_id": "cus_2001"}, ...]</code> with optional <code>phone</code>/<code>tz</code> overrides.</td></tr>
+          <tr><td><code>audience_source</code></td><td>string</td><td><code>all_overdue</code> — auto-builds the audience from the business store.</td></tr>
+          <tr><td><code>waves.size</code></td><td>int</td><td>Calls per wave (default 3, capped by <code>CALLHOOK_MAX_CONCURRENT</code>).</td></tr>
+          <tr><td><code>waves.delay</code></td><td>duration</td><td>Wait between waves — <code>"15m"</code>, <code>"90s"</code>...</td></tr>
+          <tr><td><code>waves.max_waves</code></td><td>int</td><td>Hard wave limit (0 = unlimited, bounded by audience + budget).</td></tr>
+          <tr><td><code>budget.max_calls</code></td><td>int</td><td>Hard stop on placed calls. Default: one per audience member.</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-    <h2 id="watch-dashboard">2. Watch the dashboard</h2>
-    <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>⚡ fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
+    <h2 id="lifecycle">Lifecycle</h2>
+    <p>Every terminal outcome updates the campaign. The rules:</p>
+    <ul>
+      <li><strong>Early-stop</strong> — the moment the goal is met, pending audience members are marked <em>skipped</em> and no further calls go out.</li>
+      <li><strong>Smart requeue</strong> — <code>no_answer</code> entries return to the pending pool for the next wave (max 2 rounds per person).</li>
+      <li><strong>Budget hard-stop</strong> — <code>budget_exhausted</code> status, never more calls than allowed.</li>
+      <li><strong>Crash-safe</strong> — campaigns are journal-persisted; waves resume after a restart.</li>
+    </ul>
+    <p>Terminal statuses: <code>goal_met</code> · <code>exhausted</code> (audience/waves spent) · <code>budget_exhausted</code> · <code>stopped</code> (manual).</p>
 
-    <h2 id="fire-real-event">3. Fire a real event</h2>
-    <pre><code>$ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{
-    <span class="st">"id"</span>:          <span class="st">"evt_001"</span>,
-    <span class="st">"type"</span>:        <span class="st">"invoice.due"</span>,
-    <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span>,
-    <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/callhook"</span>
-  }'
+    <h2 id="verified">Verified end-to-end</h2>
+    <div class="callout">
+      <div class="callout-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      </div>
+      <div>
+        <b>E2E result:</b> 32-person audience, target 5 payment promises, wave size 3, budget 15 → <b>goal met in 4 waves / 12 calls</b>. Five no-answers were requeued and recalled; 18 people were never called because the goal was already achieved.
+      </div>
+    </div>
 
-<span class="cm"># → {"status":"call_placed","session_id":"evt_001","call_id":"call_...","phone":"+14155550002"}</span></code></pre>
-    <p>The response returns immediately. When the call finishes, callhook POSTs the structured outcome to your <code>callback_url</code>:</p>
-    <pre><code>{
-  <span class="st">"event_id"</span>:    <span class="st">"evt_001"</span>,
-  <span class="st">"call_status"</span>: <span class="st">"completed"</span>,
-  <span class="st">"outcome"</span>:     { <span class="st">"outcome"</span>: <span class="st">"payment_promised"</span>, <span class="st">"promise_date"</span>: <span class="st">"2026-09-12"</span> },
-  <span class="st">"actions"</span>:     [<span class="st">"write.mark_promise(inv_5002 → 2026-09-12)"</span>, <span class="st">"audit.record_contact"</span>],
-  <span class="st">"confidence"</span>:  { <span class="st">"score"</span>: 0.93, <span class="st">"label"</span>: <span class="st">"high"</span> },
-  <span class="st">"transcript"</span>:  [ ... ]
-}</code></pre>
-
-    <h2 id="use-cli">4. Or use the CLI</h2>
-    <pre><code>$ go run ./cmd/callhookctl fire invoice.due cus_1002 <span class="kw">--not-before</span> 2026-09-07T14:00:00Z
-$ go run ./cmd/callhookctl batch events.json      <span class="cm"># fire many at once</span>
-$ go run ./cmd/callhookctl sessions <span class="kw">--watch</span>
-$ go run ./cmd/callhookctl metrics</code></pre>
-
-    <h2 id="going-live">5. Going live</h2>
-    <p>Dry-run proves the pipeline. For real phone calls, all you change is the environment — see <a href="production.html">Production</a>.</p>
+    <h2 id="api">Campaign API</h2>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Method &amp; path</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /api/campaigns</code></td><td>Create + start a campaign</td></tr>
+          <tr><td><code>GET /api/campaigns</code></td><td>List campaigns with progress</td></tr>
+          <tr><td><code>GET /api/campaigns/{id}</code></td><td>Full detail: goal, waves, audience states, log</td></tr>
+          <tr><td><code>POST /api/campaigns/{id}/stop</code></td><td>Stop a running campaign</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="prevnext">
-      <a href="../index.html" class="prevnext-card">
+      <a href="events.html" class="prevnext-card">
         <span class="direction">← Previous</span>
-        <span class="title">Home</span>
+        <span class="title">Event Types</span>
       </a>
-      <a href="api.html" class="prevnext-card next">
+      <a href="production.html" class="prevnext-card next">
         <span class="direction">Next →</span>
-        <span class="title">API Reference</span>
+        <span class="title">Production</span>
       </a>
     </div>
   </main>
 
-  <!-- Right On This Page TOC -->
   <aside class="docs-toc">
-    <div class="toc-title">On this page</div>
-    <ul class="toc-list">
-      <li><a href="#run-callhook" class="toc-link">1. Run callhook</a></li>
-      <li><a href="#watch-dashboard" class="toc-link">2. Watch the dashboard</a></li>
-      <li><a href="#fire-real-event" class="toc-link">3. Fire a real event</a></li>
-      <li><a href="#use-cli" class="toc-link">4. Or use the CLI</a></li>
-      <li><a href="#going-live" class="toc-link">5. Going live</a></li>
-    </ul>
-
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#what" class="toc-link">The idea</a></li>
+        <li><a href="#create" class="toc-link">Create a campaign</a></li>
+        <li><a href="#lifecycle" class="toc-link">Lifecycle</a></li>
+        <li><a href="#verified" class="toc-link">Verified E2E</a></li>
+        <li><a href="#api" class="toc-link">Campaign API</a></li>
+      </ul>
     <div class="toc-utilities">
-      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/quickstart.html" target="_blank" rel="noopener" class="toc-util-link">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/campaigns.html" target="_blank" rel="noopener" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         Edit on GitHub
       </a>
-      <a href="#run-callhook" class="toc-util-link">
+      <a href="#what" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
         Back to top
       </a>

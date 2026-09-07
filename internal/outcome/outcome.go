@@ -30,6 +30,10 @@ type Engine struct {
 	FetchCall func(ctx context.Context, callID string) (*callhookclient.CallTask, error)
 	// calle base URL — set when FetchCall is nil to build a default fetcher.
 
+	// CampaignHook, when set, is notified for every terminal outcome of a
+	// session that belongs to a campaign (session.CampaignID != "").
+	CampaignHook func(campaignID, sessionID, outcome string)
+
 	seenMu   sync.Mutex
 	seenEvt  map[string]bool // webhook event-id dedup (CALL-E retries deliveries)
 }
@@ -131,6 +135,13 @@ func (e *Engine) Apply(ev *callhookclient.WebhookEvent) {
 	}
 	if sess.Event.CallbackURL != "" {
 		e.postBack(sess, ev, actions)
+	}
+
+	// Campaign progress: notify the campaign engine of this terminal
+	// outcome (early-stop evaluation happens there).
+	if sess.CampaignID != "" && e.CampaignHook != nil {
+		outcomeVal, _ := result["outcome"].(string)
+		e.CampaignHook(sess.CampaignID, sess.ID, outcomeVal)
 	}
 }
 

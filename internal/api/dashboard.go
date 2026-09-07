@@ -43,6 +43,17 @@ const dashboardHTML = `<!doctype html>
   .fire { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
   button { font-family: inherit; background: #16202e; color: #7dd3fc; border: 1px solid #234; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; }
   button:hover { background: #1b2738; }
+  .campaign { border: 1px solid #2a3342; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; background: #0d1420; }
+  .campaign .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .campaign .title { font-weight: bold; color: #e7ecf3; }
+  .bar { margin-top: 10px; height: 14px; border-radius: 7px; background: #131926; border: 1px solid #1e2530; overflow: hidden; }
+  .bar .fill { height: 100%; background: linear-gradient(90deg,#38bdf8,#a5f3a5); transition: width .4s; }
+  .campaign .stats { display: flex; gap: 16px; margin-top: 8px; font-size: 12.5px; color: #9aa5b5; flex-wrap: wrap; }
+  .campaign .stats b { color: #e7ecf3; }
+  .clog { margin-top: 8px; font-size: 12px; color: #6b7688; }
+  .clog div { padding: 1px 0 1px 10px; border-left: 2px solid #223042; margin-left: 3px; }
+  .pill.cmp { color: #c4b5fd; border-color: #3b2f5e; }
+  .pill.cmp.done { color: #a5f3a5; border-color: #1f4022; }
 </style>
 </head>
 <body>
@@ -53,7 +64,9 @@ const dashboardHTML = `<!doctype html>
     <button onclick="fire('invoice.due')">⚡ fire invoice.due (cus_1002)</button>
     <button onclick="fire('account.warning')">⚡ fire account.warning (cus_1003)</button>
     <button onclick="fire('promo.offer')">⚡ fire promo.offer (cus_1001)</button>
+    <button onclick="launchCampaign()">🎯 launch demo campaign</button>
   </div>
+  <div id="campaigns"></div>
   <div id="list"><div class="empty">no sessions yet — fire an event above (or POST /api/events)</div></div>
 </main>
 <script>
@@ -76,13 +89,57 @@ async function fire(type) {
   if (body.status) console.log('callhook:', body.status, body.call_id || body.reason || '');
   setTimeout(render, 400);
 }
+async function launchCampaign() {
+  const res = await fetch('/api/campaigns', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'September collections',
+      event_type: 'invoice.due',
+      goal: { type: 'count', target: 5, success_outcomes: ['payment_promised'] },
+      audience_source: 'all_overdue',
+      waves: { size: 3, delay: '15s', max_waves: 4 },
+      budget: { max_calls: 12 },
+    }),
+  });
+  const c = await res.json();
+  if (c.id) console.log('campaign launched:', c.id);
+  setTimeout(render, 500);
+}
+function renderCampaignsHTML(campaigns) {
+  const el = document.getElementById('campaigns');
+  if (!campaigns.length) { el.innerHTML = ''; return; }
+  el.innerHTML = campaigns.map(c => {
+    const target = c.goal.type === 'count' ? c.goal.target : c.audience.length;
+    const pct = Math.min(100, Math.round(100 * c.progress.successes / target));
+    const done = c.status !== 'running';
+    const logs = (c.log || []).slice(-5).map(l =>
+      '<div>' + new Date(l.at).toLocaleTimeString() + ' — ' + esc(l.event) + (l.note ? ': ' + esc(l.note) : '') + '</div>').join('');
+    const nextWave = c.next_wave_at && !done ? ' · next wave ' + new Date(c.next_wave_at).toLocaleTimeString() : '';
+    return '<div class="campaign"><div class="head">' +
+      '<span class="title">🎯 ' + esc(c.name) + '</span>' +
+      '<span class="pill cmp' + (done ? ' done' : '') + '">' + esc(c.status) + '</span>' +
+      '<span class="pill">' + c.wave_number + ' wave(s)' + nextWave + '</span>' +
+      (c.campaign ? '' : '') +
+      '</div>' +
+      '<div class="bar"><div class="fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="stats">' +
+      '<span>successes <b>' + c.progress.successes + '/' + target + '</b></span>' +
+      '<span>placed <b>' + c.progress.calls_placed + '</b>/budget ' + c.budget.max_calls + '</span>' +
+      '<span>pending <b>' + c.progress.pending + '</b></span>' +
+      '<span>no-answer <b>' + c.progress.no_answer + '</b></span>' +
+      '<span>failed <b>' + c.progress.failures + '</b></span>' +
+      '</div><div class="clog">' + logs + '</div></div>';
+  }).join('');
+}
 async function render() {
-  const [sessRes, metRes, health] = await Promise.all([
-    fetch('/api/sessions'), fetch('/api/metrics'), fetch('/api/health'),
+  const [sessRes, metRes, health, campRes] = await Promise.all([
+    fetch('/api/sessions'), fetch('/api/metrics'), fetch('/api/health'), fetch('/api/campaigns').catch(() => null),
   ]);
   const sessions = await sessRes.json();
   const metrics = await metRes.json();
   const h = await health.json();
+  if (campRes) renderCampaignsHTML(await campRes.json());
   document.getElementById('mode').textContent = h.dry_run ? '· DRY-RUN' : '· LIVE';
   document.getElementById('metrics').innerHTML =
     '<span>sessions <b>' + metrics.sessions + '</b></span>' +

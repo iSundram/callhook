@@ -210,6 +210,12 @@
     { title: 'GET /api/health', cat: 'API', url: '/pages/api.html#get-health' },
     { title: 'Authentication (Bearer Token)', cat: 'API', url: '/pages/api.html#auth' },
 
+    { title: 'Campaigns: Goal-driven calling', cat: 'Campaigns', url: '/pages/campaigns.html#what' },
+    { title: 'Campaigns: Create a campaign', cat: 'Campaigns', url: '/pages/campaigns.html#create' },
+    { title: 'Campaigns: Lifecycle & early-stop', cat: 'Campaigns', url: '/pages/campaigns.html#lifecycle' },
+    { title: 'Campaigns: Verified E2E result', cat: 'Campaigns', url: '/pages/campaigns.html#verified' },
+    { title: 'Campaign API endpoints', cat: 'Campaigns', url: '/pages/campaigns.html#api' },
+
     { title: 'Event Blueprint: invoice.due', cat: 'Events', url: '/pages/events.html#invoice-due' },
     { title: 'Event Blueprint: account.warning', cat: 'Events', url: '/pages/events.html#account-warning' },
     { title: 'Event Blueprint: promo.offer', cat: 'Events', url: '/pages/events.html#promo-offer' },

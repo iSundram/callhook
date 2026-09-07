@@ -21,6 +21,33 @@ intelligent phone call via [CALL-E](https://heycall-e.com) and POSTs a
 structured outcome back. No scripts, no robocalls — a voice agent that knows
 the customer's context before it dials.
 
+## Campaigns — goal-driven calling
+
+One event → one call is the primitive. **Campaigns** are the engine on top:
+declare a *goal* and an *audience*, and callhook orchestrates waves of calls
+that **stop the moment the goal is met** — never wasting a call.
+
+```bash
+curl -X POST localhost:8080/api/campaigns -d '{
+  "name": "September collections",
+  "event_type": "invoice.due",
+  "goal":   { "type": "count", "target": 5, "success_outcomes": ["payment_promised"] },
+  "audience_source": "all_overdue",
+  "waves":  { "size": 3, "delay": "15m", "max_waves": 5 },
+  "budget": { "max_calls": 40 }
+}'
+```
+
+- **Early-stop** — the instant the target number of successes lands, the rest
+  of the audience is skipped. (E2E verified: goal met in 12 of 15 budgeted
+  calls, 18 people never called.)
+- **Smart requeue** — `no_answer` entries return to the pool for the next wave
+  (max 2 rounds per person)
+- **Budget hard-stop** — never burns more calls than you allow
+- **`reach_all` goals** — "contact every account holder" campaigns too
+- **Live war-room dashboard** — progress bar, wave log, per-recipient states
+- Campaigns are crash-safe too: journal-persisted, waves resume after restart
+
 > **The voice channel as an API.** Most phone-agent projects are one
 > workflow: confirm an appointment, fill a shift, chase one invoice. callhook
 > is the layer underneath: point *any* business system at one endpoint,
@@ -108,6 +135,9 @@ go run ./cmd/callhookctl sessions --watch
 go run ./cmd/callhookctl metrics
 ```
 
+Campaign API: `POST /api/campaigns` (create+start) · `GET /api/campaigns[/{id}]`
+(progress, waves, audience states) · `POST /api/campaigns/{id}/stop`.
+
 ### Supported events
 
 | type | example use | structured outcomes |
@@ -124,7 +154,8 @@ Adding a new event type = one blueprint in `internal/events/router.go`
 ```
 cmd/callhook/            entrypoint, config, graceful shutdown
 cmd/callhookctl/         CLI client (fire, batch, sessions, metrics)
-internal/api/         HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting
+internal/api/         HTTP: intake (+batch), campaigns, CALL-E webhook, dashboard, metrics, rate limiting
+internal/campaign/    campaign engine: goals, waves, early-stop, budgets, requeue
 internal/events/      event schema + router (event type → call blueprint)
 internal/business/    business Store interface + mock (swap for your CRM/billing)
 internal/callhookclient/ CALL-E Developer API client: calls + Goals API (docs/callhook.openapi.yaml)

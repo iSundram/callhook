@@ -13,19 +13,24 @@ import (
 	"github.com/iSundram/callhook/internal/business"
 	"github.com/iSundram/callhook/internal/callhookclient"
 	"github.com/iSundram/callhook/internal/callwindow"
+	"github.com/iSundram/callhook/internal/campaign"
 	"github.com/iSundram/callhook/internal/events"
 	"github.com/iSundram/callhook/internal/outcome"
 	"github.com/iSundram/callhook/internal/session"
 )
 
 // Server wires everything together: event intake, CALL-E client, outcome
-// engine, session registry, and the live dashboard.
+// engine, session registry, campaign engine, and the live dashboard.
 type Server struct {
 	Router   *events.Router
 	Store    business.Store
 	Sessions *session.Store
 	Calle    *callhookclient.Client
 	Outcomes *outcome.Engine
+	// Campaigns is the campaign registry; nil disables campaign endpoints.
+	Campaigns *campaign.Store
+	// BusinessSource provides auto-audiences (e.g. all overdue customers).
+	// Same as Store; separate field keeps the campaign API self-contained.
 	// PublicBaseURL is where CALL-E can reach our webhook (e.g. a tunnel URL).
 	PublicBaseURL string
 	// IntakeToken, when set, is required as "Authorization: Bearer <token>"
@@ -40,6 +45,18 @@ type Server struct {
 	limiter *rateLimiter
 }
 
+// EventResult is the pipeline outcome for one fired event — shared by the
+// HTTP intake and the campaign runner.
+type EventResult struct {
+	Status    string // call_placed | scheduled | deferred | duplicate | error
+	SessionID string
+	CallID    string
+	Phone     string
+	NotBefore string
+	Err       error
+	Body      map[string]any // full response body (error details etc.)
+}
+
 func (s *Server) Routes() *http.ServeMux {
 	s.limiter = newRateLimiter(60, time.Minute) // 60 events/min per source IP
 	mux := http.NewServeMux()
@@ -49,6 +66,12 @@ func (s *Server) Routes() *http.ServeMux {
 	mux.HandleFunc("GET /api/sessions", s.handleSessions)
 	mux.HandleFunc("GET /api/metrics", s.handleMetrics)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
+	if s.Campaigns != nil {
+		mux.HandleFunc("POST /api/campaigns", s.authIntake(s.handleCampaignCreate))
+		mux.HandleFunc("GET /api/campaigns", s.handleCampaignList)
+		mux.HandleFunc("GET /api/campaigns/{id}", s.handleCampaignGet)
+		mux.HandleFunc("POST /api/campaigns/{id}/stop", s.authIntake(s.handleCampaignStop))
+	}
 	mux.HandleFunc("GET /", s.handleDashboard)
 	return mux
 }
@@ -94,7 +117,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json: " + err.Error()})
 		return
 	}
-	status, body := s.processEvent(&ev)
+	status, body := s.processEventHTTP(&ev)
 	writeJSON(w, status, body)
 }
 
@@ -111,7 +134,7 @@ func (s *Server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	results := make([]map[string]any, 0, len(batch.Events))
 	anyOK := false
 	for i := range batch.Events {
-		status, body := s.processEvent(&batch.Events[i])
+		status, body := s.processEventHTTP(&batch.Events[i])
 		body["http_status"] = status
 		if status < 300 {
 			anyOK = true
@@ -125,13 +148,13 @@ func (s *Server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, code, map[string]any{"results": results})
 }
 
-// processEvent runs one event through the pipeline and returns the HTTP
-// status plus the response body (shared by single and batch intake).
-func (s *Server) processEvent(ev *events.Event) (int, map[string]any) {
+// ProcessEvent runs one event through the full pipeline. Shared by HTTP
+// intake and the campaign runner.
+func (s *Server) ProcessEvent(ev *events.Event) EventResult {
 	ev.ReceivedAt = time.Now().UTC()
 
 	if err := ev.Validate(); err != nil {
-		return http.StatusBadRequest, map[string]any{"error": err.Error()}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
 	}
 
 	// Idempotency: the same event must never trigger two calls.
@@ -140,34 +163,33 @@ func (s *Server) processEvent(ev *events.Event) (int, map[string]any) {
 		key = ev.ID
 	}
 	if s.Sessions.AlreadySeen(key) {
-		return http.StatusOK, map[string]any{"status": "duplicate", "session_id": ev.ID}
+		return EventResult{Status: "duplicate", SessionID: ev.ID, Body: map[string]any{"status": "duplicate", "session_id": ev.ID}}
 	}
 
 	blueprint, ok := s.Router.Blueprint(ev.Type)
 	if !ok {
-		return http.StatusBadRequest, map[string]any{
-			"error":           "unsupported event type: " + ev.Type,
-			"supported_types": s.Router.Supported(),
-		}
+		err := fmt.Errorf("unsupported event type: %s", ev.Type)
+		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error(), "supported_types": s.Router.Supported()}}
 	}
 
 	// Prefetch: resolve the full customer record BEFORE dialing, so the call
 	// task contains live business data and mid-call lookups hit cache.
 	customer, err := s.Store.GetCustomer(ev.CustomerID)
 	if err != nil {
-		return http.StatusNotFound, map[string]any{"error": err.Error()}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
 	}
 	phone := ev.Phone
 	if phone == "" {
 		phone = customer.Phone
 	}
 	if !strings.HasPrefix(phone, "+") {
-		return http.StatusBadRequest, map[string]any{"error": "phone must be E.164 format (start with +)"}
+		err := fmt.Errorf("phone must be E.164 format (start with +)")
+		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
 	}
 
 	task, err := blueprint.Compose(customer, ev, s.Store)
 	if err != nil {
-		return http.StatusInternalServerError, map[string]any{"error": err.Error()}
+		return EventResult{Status: "error", Err: err, Body: map[string]any{"error": err.Error()}}
 	}
 
 	sess := s.Sessions.Create(ev.ID, *ev, customer)
@@ -184,29 +206,56 @@ func (s *Server) processEvent(ev *events.Event) (int, map[string]any) {
 	if ev.NotBefore != "" {
 		nb, err := time.Parse(time.RFC3339, ev.NotBefore)
 		if err != nil {
-			return http.StatusBadRequest, map[string]any{"error": "not_before must be RFC3339"}
+			return EventResult{Status: "error", Err: err, Body: map[string]any{"error": "not_before must be RFC3339"}}
 		}
 		s.Sessions.DeferUntil(sess.ID, nb.UTC(), session.KindScheduled)
 		s.Sessions.Log(sess.ID, "call_scheduled", "not before "+nb.Format(time.RFC3339))
-		return http.StatusAccepted, map[string]any{
-			"status": "scheduled", "session_id": sess.ID, "not_before": ev.NotBefore,
-		}
+		return EventResult{Status: "scheduled", SessionID: sess.ID, NotBefore: ev.NotBefore,
+			Body: map[string]any{"status": "scheduled", "session_id": sess.ID, "not_before": ev.NotBefore}}
 	}
 
 	call, placed, err := s.PlaceCall(sess)
 	if err != nil {
 		s.Sessions.Log(sess.ID, "call_failed", err.Error())
-		return http.StatusBadGateway, map[string]any{"error": "callhook: " + err.Error()}
+		return EventResult{Status: "error", SessionID: sess.ID, Err: err,
+			Body: map[string]any{"error": "callhook: " + err.Error()}}
 	}
 	if !placed {
-		return http.StatusAccepted, map[string]any{
-			"status": "deferred", "session_id": sess.ID,
-			"reason": "outside calling hours", "dry_run": s.Calle.DryRun,
-		}
+		return EventResult{Status: "deferred", SessionID: sess.ID, Phone: phone,
+			Body: map[string]any{"status": "deferred", "session_id": sess.ID, "reason": "outside calling hours", "dry_run": s.Calle.DryRun}}
 	}
-	return http.StatusAccepted, map[string]any{
-		"status": "call_placed", "session_id": sess.ID, "call_id": call.ID,
-		"phone": phone, "dry_run": s.Calle.DryRun,
+	return EventResult{Status: "call_placed", SessionID: sess.ID, CallID: call.ID, Phone: phone,
+		Body: map[string]any{"status": "call_placed", "session_id": sess.ID, "call_id": call.ID, "phone": phone, "dry_run": s.Calle.DryRun}}
+}
+
+// processEventHTTP maps a pipeline result to an HTTP status + body.
+func (s *Server) processEventHTTP(ev *events.Event) (int, map[string]any) {
+	res := s.ProcessEvent(ev)
+	switch res.Status {
+	case "call_placed", "scheduled", "deferred":
+		return http.StatusAccepted, res.Body
+	case "duplicate":
+		return http.StatusOK, res.Body
+	default:
+		code := http.StatusBadRequest
+		if _, isNotFound := res.Body["error"]; isNotFound && res.Err != nil && strings.Contains(res.Err.Error(), "not found") {
+			code = http.StatusNotFound
+		}
+		if res.Status == "error" && res.CallID == "" && res.SessionID != "" && res.Err != nil && strings.HasPrefix(res.Err.Error(), "callhook:") {
+			code = http.StatusBadGateway
+		}
+		return code, res.Body
+	}
+}
+
+// FireEvent adapts ProcessEvent for the campaign runner.
+func (s *Server) FireEvent(ev *events.Event) campaign.FireResult {
+	res := s.ProcessEvent(ev)
+	return campaign.FireResult{
+		Status:    res.Status,
+		SessionID: res.SessionID,
+		CallID:    res.CallID,
+		Err:       res.Err,
 	}
 }
 
@@ -269,6 +318,21 @@ func (s *Server) PlaceCall(sess *session.Session) (*callhookclient.CallTask, boo
 	} else {
 		s.Sessions.Log(sess.ID, "call_placed", call.ID+" → "+sess.Phone)
 	}
+
+	// Dry-run: deliver the fabricated terminal result to the outcome engine
+	// after a simulated call duration, so retries, campaigns and the
+	// dashboard behave exactly as they will live.
+	if s.Calle.DryRun && s.Outcomes != nil {
+		ev := &callhookclient.WebhookEvent{
+			ID:   "wh_dry_" + call.ID,
+			Type: "call.completed",
+			Data: *call,
+		}
+		go func(ev *callhookclient.WebhookEvent) {
+			time.Sleep(2 * time.Second) // simulated call duration
+			s.Outcomes.Apply(ev)
+		}(ev)
+	}
 	return call, true, nil
 }
 
@@ -285,6 +349,101 @@ func (s *Server) handleCalleWebhook(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSessions(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, s.Sessions.Snapshot())
+}
+
+// --- campaign endpoints ---
+
+type campaignCreateReq struct {
+	Name           string                `json:"name"`
+	EventType      string                `json:"event_type"`
+	Payload        json.RawMessage       `json:"payload,omitempty"`
+	Goal           campaign.GoalSpec     `json:"goal"`
+	Audience       []campaign.AudienceEntry `json:"audience"`
+	AudienceSource string                `json:"audience_source,omitempty"` // "all_overdue"
+	Waves          campaign.WavePolicy   `json:"waves"`
+	Budget         campaign.Budget       `json:"budget"`
+}
+
+func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
+	var req campaignCreateReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json: " + err.Error()})
+		return
+	}
+	if req.EventType == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "event_type is required"})
+		return
+	}
+	if req.Goal.Type == "" {
+		req.Goal.Type = campaign.GoalCount
+	}
+	if req.Goal.Type == campaign.GoalCount && req.Goal.Target <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "goal.target must be > 0 for count goals"})
+		return
+	}
+	if len(req.Goal.SuccessOutcomes) == 0 {
+		// Default: the blueprint's success-flavored outcomes.
+		req.Goal.SuccessOutcomes = []string{"payment_promised", "accepted", "acknowledged", "activity_confirmed_legitimate"}
+	}
+
+	// Audience: explicit list, or auto-query the business store.
+	audience := req.Audience
+	if len(audience) == 0 {
+		switch req.AudienceSource {
+		case "all_overdue", "":
+			customers, err := s.Store.ListOverdueCustomers()
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+			for _, c := range customers {
+				audience = append(audience, campaign.AudienceEntry{CustomerID: c.ID, State: campaign.EntryPending})
+			}
+		default:
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown audience_source: " + req.AudienceSource})
+			return
+		}
+	} else {
+		for i := range audience {
+			audience[i].State = campaign.EntryPending
+		}
+	}
+	if len(audience) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "audience is empty"})
+		return
+	}
+
+	if req.Budget.MaxCalls == 0 {
+		req.Budget.MaxCalls = len(audience) // sane default: at most one call per person
+	}
+	if req.Name == "" {
+		req.Name = req.EventType + " campaign"
+	}
+
+	c := s.Campaigns.Create(req.Name, req.EventType, req.Payload, req.Goal, audience, req.Waves, req.Budget)
+	writeJSON(w, http.StatusCreated, c)
+}
+
+func (s *Server) handleCampaignList(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, s.Campaigns.List())
+}
+
+func (s *Server) handleCampaignGet(w http.ResponseWriter, r *http.Request) {
+	c, ok := s.Campaigns.Get(r.PathValue("id"))
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "campaign not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, c)
+}
+
+func (s *Server) handleCampaignStop(w http.ResponseWriter, r *http.Request) {
+	if !s.Campaigns.Stop(r.PathValue("id")) {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "campaign not found or not running"})
+		return
+	}
+	c, _ := s.Campaigns.Get(r.PathValue("id"))
+	writeJSON(w, http.StatusOK, c)
 }
 
 // handleMetrics serves aggregate pipeline stats for monitoring.

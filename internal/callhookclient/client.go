@@ -175,8 +175,10 @@ func truncate(b []byte, n int) string {
 }
 
 // dryRunCall fabricates a plausible completed call so the whole pipeline —
-// event intake, task composition, outcome engine, dashboard — can be
-// exercised end to end without spending call balance.
+// event intake, task composition, outcome engine, campaigns, dashboard —
+// can be exercised end to end without spending call balance. Outcomes are
+// varied (deterministic by idempotency key) so campaigns show real progress:
+// promises, no-answers, refusals, escalations.
 func (c *Client) dryRunCall(req *CreateCallRequest, idempotencyKey string) *CallTask {
 	now := time.Now().UTC()
 	phone := ""
@@ -206,10 +208,94 @@ func (c *Client) dryRunCall(req *CreateCallRequest, idempotencyKey string) *Call
 				{OffsetSeconds: ptr(5), Speaker: "bot", Text: "Perfect, terminating the simulated call. Goodbye!"},
 			},
 		}},
-		CompletionConfidence: &Confidence{Score: 0.99, Label: "high"},
+		StructuredResult:   DryRunResult(req.ResultSchema, idempotencyKey),
+		CompletionConfidence: &Confidence{Score: 0.9, Label: "high"},
 		Evidence:             []string{"Dry-run mode: fabricated terminal result."},
 		CreatedAt:            now,
 	}
+}
+
+// DryRunResult fabricates a schema-valid structured result, choosing a
+// deterministic-but-varied value for each enum field.
+func DryRunResult(schema map[string]any, seed string) map[string]any {
+	if schema == nil {
+		return nil
+	}
+	props, _ := schema["properties"].(map[string]any)
+	if props == nil {
+		return nil
+	}
+	h := fnv32(seed)
+	out := map[string]any{}
+	for name, p := range props {
+		prop, _ := p.(map[string]any)
+		if prop == nil {
+			continue
+		}
+		enum := enumOf(prop["enum"])
+		if len(enum) > 0 {
+			out[name] = weightedPick(enum, h)
+		} else if name == "promise_date" {
+			out[name] = time.Now().UTC().AddDate(0, 0, 2+int(h%5)).Format("2006-01-02")
+		} else if t, _ := prop["type"].(string); t == "string" {
+			out[name] = "dry-run result"
+		}
+	}
+	return out
+}
+
+// weightedPick chooses a demo-friendly outcome: ~45% success, ~20%
+// no-answer, rest spread — so dry-run campaigns reliably show progress,
+// early-stops and requeues.
+func weightedPick(enum []any, h uint32) any {
+	has := func(v string) bool {
+		for _, e := range enum {
+			if s, ok := e.(string); ok && s == v {
+				return true
+			}
+		}
+		return false
+	}
+	r := h % 100
+	switch {
+	case r < 45 && (has("payment_promised") || has("accepted") || has("acknowledged")):
+		for _, e := range enum {
+			if s, ok := e.(string); ok {
+				switch s {
+				case "payment_promised", "accepted", "acknowledged":
+					return s
+				}
+			}
+		}
+	case r < 65 && has("no_answer"):
+		return "no_answer"
+	}
+	return enum[h%uint32(len(enum))]
+}
+
+// enumOf normalizes a schema enum that may be []any (from JSON) or
+// []string (built in Go).
+func enumOf(v any) []any {
+	switch e := v.(type) {
+	case []any:
+		return e
+	case []string:
+		out := make([]any, len(e))
+		for i, s := range e {
+			out[i] = s
+		}
+		return out
+	}
+	return nil
+}
+
+func fnv32(s string) uint32 {
+	h := uint32(2166136261)
+	for i := 0; i < len(s); i++ {
+		h ^= uint32(s[i])
+		h *= 16777619
+	}
+	return h
 }
 
 // --- Goals API (reusable, versioned call workflows) ---

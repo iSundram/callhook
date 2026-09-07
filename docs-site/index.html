@@ -22,6 +22,7 @@
         <a href="pages/quickstart.html">Quickstart</a>
         <a href="pages/api.html">API</a>
         <a href="pages/events.html">Events</a>
+        <a href="pages/campaigns.html">Campaigns</a>
         <a href="pages/production.html">Production</a>
         <a href="pages/architecture.html">Architecture</a>
       </div>
@@ -85,6 +86,7 @@
       <span class="badge"><b>Go</b> single binary</span>
       <span class="badge"><b>0</b> dependencies</span>
       <span class="badge">self-hosted</span>
+      <span class="badge"><b>🎯</b> goal-driven campaigns</span>
       <span class="badge">MIT</span>
     </div>
     <div class="cta-row">
@@ -192,6 +194,9 @@
       </tbody>
     </table>
   </div>
+
+  <h2 id="campaigns">Campaigns: declare a goal, not a dial list</h2>
+  <p>Fire one webhook per call — or declare a <strong>goal</strong> and let callhook run the waves: <em>"collect 5 payment promises from the overdue list."</em> Waves launch, unanswered customers are requeued, and the campaign <strong>stops the moment the goal is met</strong> — everyone not yet called is skipped, the budget stays unspent. <a href="pages/campaigns.html">See campaigns →</a></p>
 
   <h2 id="first-event">Fire your first event</h2>
   <pre><code><span class="cm"># start callhook (dry-run: no API key, no real calls, no balance)</span>

@@ -33,13 +33,14 @@ func Open(path string) (*Journal, error) {
 	return &Journal{path: path, f: f}, nil
 }
 
-// Persist marshals the session and appends one line. Errors are returned to
-// the caller; the store treats persistence as best-effort.
-func (j *Journal) Persist(sess *session.Session) error {
+// Persist marshals the value and appends one line. Works for any JSON type
+// (sessions, campaigns). Errors are returned to the caller; stores treat
+// persistence as best-effort.
+func (j *Journal) Persist(v any) error {
 	if j == nil {
 		return nil
 	}
-	b, err := json.Marshal(sess)
+	b, err := json.Marshal(v)
 	if err != nil {
 		return err
 	}
@@ -52,6 +53,11 @@ func (j *Journal) Persist(sess *session.Session) error {
 // Replay returns the last snapshot for each persisted session, in the order
 // they first appeared.
 func Replay(path string) ([]*session.Session, error) {
+	return ReplayT[*session.Session](path)
+}
+
+// ReplayT is the generic replay: last JSON snapshot per key field "ID".
+func ReplayT[T any](path string) ([]T, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -61,8 +67,9 @@ func Replay(path string) ([]*session.Session, error) {
 	}
 	defer f.Close()
 
+	type ider struct{ ID string }
 	order := []string{}
-	last := map[string]*session.Session{}
+	last := map[string]T{}
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024)
 	for sc.Scan() {
@@ -70,19 +77,22 @@ func Replay(path string) ([]*session.Session, error) {
 		if len(line) == 0 {
 			continue
 		}
-		var sess session.Session
-		if err := json.Unmarshal(line, &sess); err != nil {
+		var v T
+		if err := json.Unmarshal(line, &v); err != nil {
 			continue // tolerate a torn final line after a crash
 		}
-		if _, seen := last[sess.ID]; !seen {
-			order = append(order, sess.ID)
+		raw, _ := json.Marshal(v)
+		var id ider
+		_ = json.Unmarshal(raw, &id)
+		if _, seen := last[id.ID]; !seen {
+			order = append(order, id.ID)
 		}
-		last[sess.ID] = &sess
+		last[id.ID] = v
 	}
 	if err := sc.Err(); err != nil {
 		return nil, err
 	}
-	out := make([]*session.Session, 0, len(order))
+	out := make([]T, 0, len(order))
 	for _, id := range order {
 		out = append(out, last[id])
 	}

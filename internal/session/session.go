@@ -41,6 +41,7 @@ type Session struct {
 	RetryCount   int
 	NextRetryAt  *time.Time
 	NextRetryKind string
+	CampaignID   string // set when this session belongs to a campaign wave
 	LastUpdate   time.Time
 }
 
@@ -228,6 +229,11 @@ func (s *Store) IncrRetry(id string) bool {
 	return ok
 }
 
+// SetCampaign tags a session as part of a campaign.
+func (s *Store) SetCampaign(id, campaignID string) {
+	s.mutate(id, func(sess *Session) { sess.CampaignID = campaignID })
+}
+
 // SetCallID records the placed call id (test/helper path).
 func (s *Store) SetCallID(id, callID string) {
 	s.mutate(id, func(sess *Session) { sess.CallID = callID })
@@ -316,6 +322,7 @@ func (s *Store) Snapshot() []SessionView {
 			RetryCount:    sess.RetryCount,
 			NextRetryAt:   sess.NextRetryAt,
 			NextRetryKind: sess.NextRetryKind,
+			CampaignID:    sess.CampaignID,
 			UpdatedAt:     sess.LastUpdate,
 		})
 	}
@@ -350,5 +357,6 @@ type SessionView struct {
 	RetryCount    int            `json:"retry_count"`
 	NextRetryAt   *time.Time     `json:"next_retry_at"`
 	NextRetryKind string         `json:"next_retry_kind"`
+	CampaignID    string         `json:"campaign_id,omitempty"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 }

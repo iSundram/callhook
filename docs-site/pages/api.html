@@ -21,6 +21,7 @@
         <a href="quickstart.html">Quickstart</a>
         <a href="api.html" class="active">API</a>
         <a href="events.html">Events</a>
+        <a href="campaigns.html">Campaigns</a>
         <a href="production.html">Production</a>
         <a href="architecture.html">Architecture</a>
       </div>
@@ -66,6 +67,7 @@
     <a href="quickstart.html">Quickstart</a>
     <a href="api.html" class="active">API Reference</a>
     <a href="events.html">Event Types</a>
+    <a href="campaigns.html">Campaigns</a>
     <a href="production.html">Production</a>
     <a href="architecture.html">Architecture</a>
   </nav>
@@ -95,6 +97,10 @@
         <a href="events.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           Event Types
+        </a>
+        <a href="campaigns.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          Campaigns
         </a>
       </nav>
     </div>
@@ -137,7 +143,7 @@
         </thead>
         <tbody>
           <tr><td><code>id</code></td><td><span class="type-chip req">string · required</span></td><td>Unique event id — also the idempotency key (unless <code>idempotency_key</code> is set). Duplicate ids never call twice.</td></tr>
-          <tr><td><code>type</code></td><td><span class="type-chip req">string · required</span></td><td>Event type — see <a href="events.html">Events</a>.</td></tr>
+          <tr><td><code>type</code></td><td><span class="type-chip req">string · required</span></td><td>Event type — see <a href="events.html">Events</a> and <a href="campaigns.html">Campaigns</a>.</td></tr>
           <tr><td><code>customer_id</code></td><td><span class="type-chip req">string · required</span></td><td>Resolves the customer record from the business store; binds the whole session to one customer.</td></tr>
           <tr><td><code>phone</code></td><td><span class="type-chip">string</span></td><td>E.164 override. Defaults to the customer's stored number.</td></tr>
           <tr><td><code>tz</code></td><td><span class="type-chip">string</span></td><td>IANA timezone override (e.g. <code>Asia/Kolkata</code>) for the calling-hours check. Defaults by region.</td></tr>

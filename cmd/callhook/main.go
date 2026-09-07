@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/iSundram/callhook/internal/api"
 	"github.com/iSundram/callhook/internal/business"
 	"github.com/iSundram/callhook/internal/callhookclient"
+	"github.com/iSundram/callhook/internal/campaign"
 	"github.com/iSundram/callhook/internal/events"
 	"github.com/iSundram/callhook/internal/outcome"
 	"github.com/iSundram/callhook/internal/retry"
@@ -80,9 +82,34 @@ func main() {
 
 	client := callhookclient.New(apiKey, baseURL)
 	client.DryRun = dryRun
+
+	// Campaign engine: goal-driven waves of calls.
+	campaigns := campaign.NewStore()
+	campaignJournalPath := getenv("CALLHOOK_CAMPAIGN_JOURNAL", "data/campaigns.jsonl")
+	campaignJournal, err := store.Open(campaignJournalPath)
+	if err != nil {
+		log.Fatalf("open campaign journal %s: %v", campaignJournalPath, err)
+	}
+	defer campaignJournal.Close()
+	campaigns.SetPersister(func(c *campaign.Campaign) {
+		if err := campaignJournal.Persist(c); err != nil {
+			log.Printf("campaign journal persist %s: %v", c.ID, err)
+		}
+	})
+	restoredCampaigns, err := store.ReplayT[*campaign.Campaign](campaignJournalPath)
+	if err != nil {
+		log.Fatalf("replay campaign journal: %v", err)
+	}
+	campaigns.Restore(restoredCampaigns)
+	if len(restoredCampaigns) > 0 {
+		log.Printf("restored %d campaign(s) from %s", len(restoredCampaigns), campaignJournalPath)
+	}
+
 	outcomes := outcome.New(storeB, sessions)
 	outcomes.FetchCall = client.GetCall // enrich webhook payloads with full call (transcripts)
 	outcomes.RetryDelay = retryDelay
+
+	maxConcurrent := getint("CALLHOOK_MAX_CONCURRENT", 3)
 
 	srv := &api.Server{
 		Router:         events.NewRouter(),
@@ -90,11 +117,23 @@ func main() {
 		Sessions:       sessions,
 		Calle:          client,
 		Outcomes:       outcomes,
+		Campaigns:      campaigns,
 		PublicBaseURL:  publicURL,
 		IntakeToken:    intakeToken,
 		WebhookSecret:  webhookSecret,
 		EnforceWindows: enforceWindows,
 	}
+
+	// Campaign runner: waves through the shared pipeline, progress on every
+	// terminal outcome, early-stop the moment the goal is met.
+	campRunner := &campaign.Runner{
+		Store:        campaigns,
+		Fire:         srv.FireEvent,
+		TagSession:   sessions.SetCampaign,
+		MaxConcurrent: maxConcurrent,
+		Stagger:      300 * time.Millisecond,
+	}
+	outcomes.CampaignHook = campRunner.OnTerminal
 
 	// Scheduler: redials unanswered customers, fires window deferrals and
 	// scheduled starts when their slot comes due.
@@ -107,6 +146,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go sched.Run(ctx)
+	go runCampaignPump(ctx, campRunner, retryTick)
 
 	httpSrv := &http.Server{Addr: addr, Handler: srv.Routes()}
 	go func() {
@@ -120,11 +160,38 @@ func main() {
 
 	log.Printf("callhook %s listening on %s (dashboard: http://localhost%s/)", version, addr, addr)
 	log.Printf("supported events: %s", "invoice.due, account.warning, promo.offer")
-	log.Printf("intake: POST /api/events (+/batch)   webhook: POST /callhook/webhook   metrics: GET /api/metrics")
-	log.Printf("retries: redial after %s, up to %d retries | windows: %v", retryDelay, session.MaxRetries, enforceWindows)
+	log.Printf("intake: POST /api/events (+/batch)   campaigns: POST /api/campaigns   webhook: POST /callhook/webhook")
+	log.Printf("retries: redial after %s, up to %d retries | windows: %v | max concurrent calls: %d", retryDelay, session.MaxRetries, enforceWindows, maxConcurrent)
 	if err := httpSrv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
+}
+
+// runCampaignPump ticks the campaign engine: launches due waves.
+func runCampaignPump(ctx context.Context, r *campaign.Runner, tick time.Duration) {
+	if tick <= 0 {
+		tick = 15 * time.Second
+	}
+	t := time.NewTicker(tick)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			r.Pump(time.Now().UTC())
+		}
+	}
+}
+
+func getint(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+		log.Printf("invalid %s — using default %d", key, def)
+	}
+	return def
 }
 
 func getenv(key, def string) string {
