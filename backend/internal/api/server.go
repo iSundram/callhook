@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+
 	"net/http"
 	"strings"
 	"sync"
@@ -20,7 +20,7 @@ import (
 )
 
 // Server wires everything together: event intake, CALL-E client, outcome
-// engine, session registry, campaign engine, and the live dashboard.
+// engine, session registry, campaign engine, and the web app.
 type Server struct {
 	Router   *events.Router
 	Store    business.Store
@@ -76,14 +76,9 @@ func (s *Server) Routes() *http.ServeMux {
 	return mux
 }
 
-// handleRoot serves the embedded web app when built, the interim dashboard
-// otherwise.
+// handleRoot serves the embedded web app.
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	if hasWebApp() {
-		http.FileServer(http.FS(webAppFS())).ServeHTTP(w, r)
-		return
-	}
-	s.handleDashboard(w, r)
+	http.FileServer(http.FS(webAppFS())).ServeHTTP(w, r)
 }
 
 // cors allows the web app to talk to this API from any origin (the token is
@@ -103,11 +98,11 @@ func (s *Server) cors(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":              true,
-		"dry_run":         s.Calle.DryRun,
+		"ok":               true,
+		"dry_run":          s.Calle.DryRun,
 		"windows_enforced": s.EnforceWindows,
-		"auth_intake":     s.IntakeToken != "",
-		"auth_webhook":    s.WebhookSecret != "",
+		"auth_intake":      s.IntakeToken != "",
+		"auth_webhook":     s.WebhookSecret != "",
 	})
 }
 
@@ -379,14 +374,14 @@ func (s *Server) handleSessions(w http.ResponseWriter, _ *http.Request) {
 // --- campaign endpoints ---
 
 type campaignCreateReq struct {
-	Name           string                `json:"name"`
-	EventType      string                `json:"event_type"`
-	Payload        json.RawMessage       `json:"payload,omitempty"`
-	Goal           campaign.GoalSpec     `json:"goal"`
+	Name           string                   `json:"name"`
+	EventType      string                   `json:"event_type"`
+	Payload        json.RawMessage          `json:"payload,omitempty"`
+	Goal           campaign.GoalSpec        `json:"goal"`
 	Audience       []campaign.AudienceEntry `json:"audience"`
-	AudienceSource string                `json:"audience_source,omitempty"` // "all_overdue"
-	Waves          campaign.WavePolicy   `json:"waves"`
-	Budget         campaign.Budget       `json:"budget"`
+	AudienceSource string                   `json:"audience_source,omitempty"` // "all_overdue"
+	Waves          campaign.WavePolicy      `json:"waves"`
+	Budget         campaign.Budget          `json:"budget"`
 }
 
 func (s *Server) handleCampaignCreate(w http.ResponseWriter, r *http.Request) {
@@ -475,9 +470,9 @@ func (s *Server) handleCampaignStop(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleMetrics(w http.ResponseWriter, _ *http.Request) {
 	sessions := s.Sessions.Snapshot()
 	m := map[string]any{
-		"sessions":     len(sessions),
-		"by_status":    map[string]int{},
-		"by_outcome":   map[string]int{},
+		"sessions":      len(sessions),
+		"by_status":     map[string]int{},
+		"by_outcome":    map[string]int{},
 		"retries_armed": 0,
 	}
 	byStatus := m["by_status"].(map[string]int)
@@ -498,17 +493,6 @@ func (s *Server) handleMetrics(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, m)
 }
 
-func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if _, err := fmt.Fprint(w, dashboardHTML); err != nil {
-		log.Printf("dashboard render: %v", err)
-	}
-}
-
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -518,10 +502,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 // --- minimal per-IP rate limiter (stdlib only) ---
 
 type rateLimiter struct {
-	mu      sync.Mutex
-	limit   int
-	window  time.Duration
-	hits    map[string][]time.Time
+	mu     sync.Mutex
+	limit  int
+	window time.Duration
+	hits   map[string][]time.Time
 }
 
 func newRateLimiter(limit int, window time.Duration) *rateLimiter {

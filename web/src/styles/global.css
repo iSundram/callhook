@@ -72,7 +72,7 @@ a:hover { color: #ffffff; }
 }
 .hdr .btn.sm { padding: 3px 10px; font-size: 11.5px; }
 .hdr-logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-weight: 700; font-size: 13.5px; }
-.hdr-logo img { width: 17px; height: 15px; }
+.hdr-logo img { height: 20px; width: auto; }
 .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
 /* ---------- sidebar ---------- */
