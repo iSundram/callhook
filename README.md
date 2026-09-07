@@ -5,6 +5,7 @@
 <p align="center"><em>Fire a webhook. Your customer's phone rings.</em></p>
 
 <p align="center">
+  <a href="https://callhook.onrender.com"><img src="https://img.shields.io/badge/▶_live_demo-callhook.onrender.com-5C4E4E" alt="Live demo" /></a>
   <a href="https://github.com/iSundram/callhook/actions/workflows/ci.yml"><img src="https://github.com/iSundram/callhook/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/iSundram/callhook/releases"><img src="https://img.shields.io/github/v/release/iSundram/callhook?color=%23D1D0D0&display_name=tag" alt="Release" /></a>
   <a href="https://callhook.github.io"><img src="https://img.shields.io/badge/docs-callhook.github.io-D1D0D0" alt="Docs" /></a>
@@ -251,6 +252,11 @@ Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/)
 hackathon. CALL-E is genuinely called at runtime via the Developer API
 (`POST /v1/calls` with `result_schema`, terminal results via webhook; the
 Goals API is integrated as well).
+
+**▶ Live demo:** [callhook.onrender.com](https://callhook.onrender.com) —
+the full war room (dry-run mode: real pipeline, fabricated calls, zero
+balance). Connect, then hit **Run the demo**: one event of each of the 8
+types + a goal-driven campaign with early-stop, live.
 
 ## License
 

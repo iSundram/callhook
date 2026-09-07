@@ -134,6 +134,17 @@ export default function WarRoom() {
               <Link to="/fire" className="btn">Fire an event</Link>
               <Link to="/campaigns" className="btn">Launch a campaign</Link>
             </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ padding: '6px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 12.5 }}>
+                <b>Run the demo</b> — all 8 event types + a campaign. Everything appears live below.
+              </div>
+              <div style={{ padding: '6px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 12.5 }}>
+                <b>Fire an event</b> — push a single event through the pipeline by hand, watch it end-to-end.
+              </div>
+              <div style={{ padding: '6px 0', fontSize: 12.5 }}>
+                <b>Launch a campaign</b> — declare a goal (e.g. "5 payment promises"), callhook runs the waves.
+              </div>
+            </div>
           </div>
         </div>
       </div>
