@@ -107,6 +107,16 @@ a:hover { color: #ffffff; }
 .pill.live { color: var(--success); border-color: rgba(134,239,172,.35); background: var(--success-bg); }
 .pill.dry { color: var(--warning); border-color: rgba(253,224,71,.35); background: var(--warning-bg); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+/* Header mode indicator: a colored dot button; the mode is revealed on
+   click (popover) so the header stays compact. */
+.pill.mode-dot {
+  padding: 6px; border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; cursor: pointer; border: 1px solid var(--border-medium);
+  background: var(--bg-surface); line-height: 0;
+}
+.dot.live { background: var(--success); }
+.dot.dry { background: var(--warning); box-shadow: 0 0 6px rgba(253,224,71,.45); }
+.pill.mode-dot:hover { border-color: rgba(253,224,71,.5); }
 
 /* ---------- cards & stats ---------- */
 .card {

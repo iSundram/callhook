@@ -25,12 +25,12 @@ export default function Header({ onMenu }: { onMenu: () => void }) {
       <div className="hdr-right">
         {health && (
           <button
-            className={`pill ${health.dry_run ? 'dry' : 'live'}`}
+            className="pill mode-dot"
             onClick={() => setModeOpen(o => !o)}
-            title={health.dry_run ? 'What is dry-run mode?' : 'Live mode'}
-            style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+            aria-label={health.dry_run ? 'Dry-run mode — click for details' : 'Live mode — click for details'}
+            title={health.dry_run ? 'Dry-run — click for details' : 'Live — click for details'}
           >
-            <span className="dot" /> {health.dry_run ? 'Dry-run' : 'Live'}
+            <span className={`dot ${health.dry_run ? 'dry' : 'live'}`} />
           </button>
         )}
         <button className="btn sm" onClick={disconnect}>Disconnect</button>
@@ -51,7 +51,10 @@ export default function Header({ onMenu }: { onMenu: () => void }) {
         >
           {health.dry_run ? (
             <>
-              <strong>Dry-run mode</strong>
+              <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                <span className="dot dry" style={{ width: 9, height: 9 }} />
+                <strong>Dry-run mode</strong>
+              </div>
               <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
                 The full pipeline runs — events, prefetch, calls, outcomes, campaigns — but
                 calls are <b>fabricated locally</b>. No phones ring, no CALL-E balance is spent.
@@ -72,7 +75,10 @@ export default function Header({ onMenu }: { onMenu: () => void }) {
             </>
           ) : (
             <>
-              <strong>Live mode</strong>
+              <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                <span className="dot live" style={{ width: 9, height: 9 }} />
+                <strong>Live mode — production</strong>
+              </div>
               <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
                 Real calls are placed through CALL-E and bill your balance. Sessions, retries
                 and polite-hours deferrals behave exactly as in dry-run — the pipeline is the
