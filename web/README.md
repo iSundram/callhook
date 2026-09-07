@@ -18,6 +18,7 @@ the Gothic noir design system is hand-rolled CSS with the brand tokens
 | `#/campaigns` | Campaign cards with progress + **create wizard** (goal → waves → budget) |
 | `#/campaigns/:id` | Campaign war-room: progress, budget meter, audience grid, wave log, stop |
 | `#/fire` | Fire single events with inline event-type docs |
+| `#/integrations` | Platform-adapter catalog: routes, env status, signature schemes (live from `GET /api/integrations`) |
 | `#/settings` | Connection + server config snapshot |
 
 ## Development

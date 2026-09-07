@@ -172,8 +172,9 @@ func main() {
 	}()
 
 	log.Printf("callhook %s listening on %s (dashboard: http://localhost%s/)", version, addr, addr)
-	log.Printf("supported events: %s", "invoice.due, account.warning, promo.offer")
+	log.Printf("supported events: %s", "invoice.due, account.warning, promo.offer, delivery.window, appointment.reminder, payment.failed, subscription.expiring, feedback.request")
 	log.Printf("intake: POST /api/events (+/batch)   campaigns: POST /api/campaigns   webhook: POST /callhook/webhook")
+	log.Printf("integrations: 19 platform adapters under POST /integrations/{platform}/webhook   catalog: GET /api/integrations")
 	log.Printf("retries: redial after %s, up to %d retries | windows: %v | max concurrent calls: %d", retryDelay, session.MaxRetries, enforceWindows, maxConcurrent)
 	if err := httpSrv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)

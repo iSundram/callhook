@@ -151,6 +151,7 @@ export <span class="kw">CALLHOOK_PUBLIC_URL</span>=https://your-tunnel.example.c
     <pre><code>export <span class="kw">CALLHOOK_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># ALL /api/* endpoints require: Authorization: Bearer &lt;token&gt;</span>
 export <span class="kw">CALLHOOK_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class="cm"># POST /callhook/webhook requires: X-Callhook-Secret: &lt;secret&gt;</span></code></pre>
     <p>The token gates every API endpoint (including the ones the war room uses — the Connect screen asks for it); <code>/api/health</code> stays open as the connect probe. Rate limiting (60 events/min per source) and CORS are built in.</p>
+    <p>The same tunnel also receives <a href="integrations.html#native-adapters">platform webhooks</a> at <code>/integrations/&lt;platform&gt;/webhook</code> — those are verified by each platform's own signature scheme (the secrets are separate env vars, e.g. <code>STRIPE_WEBHOOK_SECRET</code>; see the <a href="https://github.com/iSundram/callhook/blob/main/INTEGRATIONS.md">integrations reference</a>). Behind a tunnel, set <code>HUBSPOT_EXTERNAL_BASE_URL</code> so HubSpot v3 signatures reconstruct the public URI correctly.</p>
 
     <h2 id="persistence">4. Persistence</h2>
     <pre><code>export <span class="kw">CALLHOOK_JOURNAL</span>=/var/lib/callhook/sessions.jsonl</code></pre>

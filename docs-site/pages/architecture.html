@@ -190,8 +190,9 @@
         </thead>
         <tbody>
           <tr><td><code>cmd/callhook</code></td><td>Entrypoint, config, graceful shutdown</td></tr>
-          <tr><td><code>cmd/callhookctl</code></td><td>CLI client: fire, batch, sessions, metrics</td></tr>
+          <tr><td><code>cmd/callhookctl</code></td><td>CLI client: fire, batch, sessions, metrics, test-webhook</td></tr>
           <tr><td><code>internal/api</code></td><td>HTTP: intake (+batch), CALL-E webhook, dashboard, metrics, rate limiting, auth</td></tr>
+          <tr><td><code>internal/integrations</code></td><td>19 platform webhook adapters — signature verification per each vendor's docs, payload → event mapping (<a href="integrations.html#native-adapters">catalog</a>)</td></tr>
           <tr><td><code>internal/events</code></td><td>Event schema + router: event type → blueprint (task composer + result schema)</td></tr>
           <tr><td><code>internal/business</code></td><td>The Store interface + mock — the surface you implement against your CRM</td></tr>
           <tr><td><code>internal/callhookclient</code></td><td>CALL-E Developer API client: calls + Goals + webhooks (their OpenAPI spec ships in <code>docs/</code>)</td></tr>

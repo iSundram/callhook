@@ -91,6 +91,7 @@
       <span class="badge">self-hosted</span>
       <span class="badge"><b>+</b> goal-driven campaigns</span>
       <span class="badge"><b>8</b> event types</span>
+      <span class="badge"><b>19</b> webhook integrations</span>
       <span class="badge">MCP server</span>
       <span class="badge">MIT</span>
     </div>
@@ -210,7 +211,7 @@ $ ./callhook/callhook_linux_amd64/callhook
   <p>Fire one webhook per call — or declare a <strong>goal</strong> and let callhook run the waves: <em>"collect 5 payment promises from the overdue list."</em> Waves launch, unanswered customers are requeued, and the campaign <strong>stops the moment the goal is met</strong> — everyone not yet called is skipped, the budget stays unspent. <a href="pages/campaigns.html">See campaigns →</a></p>
 
   <h2 id="integrations">Integrate anything that can POST</h2>
-  <p>Stripe, Shopify, n8n, Zapier, cron + curl — one webhook endpoint with idempotency built in. Structured outcomes POST back; AI agents drive it over MCP; your CRM plugs in via one interface. <a href="pages/integrations.html">Integrations →</a></p>
+  <p>Stripe, Slack, Shopify, GitHub, HubSpot, PagerDuty, AWS SNS + 12 more get native, signature-verified adapters — plus n8n, Zapier, OpenAI/LangChain agent tools and MCP. Or point anything that can POST at the generic endpoint: one webhook, idempotency built in, structured outcomes back. <a href="pages/integrations.html">Integrations →</a></p>
 
   <h2 id="first-event">Fire your first event</h2>
   <pre><code><span class="cm"># start callhook (dry-run: no API key, no real calls, no balance)</span>

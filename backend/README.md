@@ -33,6 +33,7 @@ campaigns) with fabricated calls, zero balance.
 go run ./cmd/callhookctl fire invoice.due cus_1002
 go run ./cmd/callhookctl sessions --watch
 go run ./cmd/callhookctl metrics
+go run ./cmd/callhookctl test-webhook stripe   # signed fixture → live adapter, end-to-end
 ```
 
 ## Layout
@@ -50,6 +51,7 @@ internal/outcome/        outcome engine: policy-gated writes, escalation, callba
 internal/retry/          scheduler: redials, calling-window deferrals, scheduled starts
 internal/callwindow/     polite-hours gate (region → timezone, 9–20h weekdays)
 internal/store/          crash-safe JSONL journal persistence
+internal/integrations/   19 platform webhook adapters (doc-verified signatures)
 ```
 
 ## Integration surface (for the frontend)
@@ -61,6 +63,8 @@ internal/store/          crash-safe JSONL journal persistence
 | `GET /api/sessions` | live session feed (states, audit trail, transcripts) |
 | `GET /api/metrics` | aggregate stats |
 | `GET /api/health` | config snapshot |
+| `GET /api/integrations` | platform-adapter catalog + live env status |
+| `POST /integrations/{platform}/webhook` | 19 platform adapters (see [`../INTEGRATIONS.md`](../INTEGRATIONS.md)) |
 | `GET /` | the embedded web app (war room) |
 
 The web app (React, in `../web`) is embedded into this binary via

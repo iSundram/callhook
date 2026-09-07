@@ -146,7 +146,8 @@ $ <span class="hl">go run ./cmd/callhook</span>
 
 CALLHOOK_API_KEY not set — running in <span class="kw">DRY-RUN</span> mode (no real calls placed)
 callhook dev listening on :8080 (dashboard: http://localhost:8080/)
-supported events: invoice.due, account.warning, promo.offer
+supported events: invoice.due, account.warning, promo.offer, delivery.window, appointment.reminder, payment.failed, subscription.expiring, feedback.request
+integrations: 19 platform adapters under POST /integrations/{platform}/webhook
 retries: redial after 2h, up to 2 retries | windows: true</code></pre>
     <p>No <code>CALLHOOK_API_KEY</code>? callhook runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
 
