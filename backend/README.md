@@ -17,7 +17,7 @@ webhook in ──► router ──► prefetch ──► CALL-E call ──► c
 
 ```bash
 cd backend
-go run ./cmd/callhook          # dry-run server + dashboard on :8080
+go run ./cmd/callhook          # dry-run server + war-room web app on :8080
 go test ./...                  # all suites
 go vet ./...
 make demo                      # dry-run with fast retries (5s)
@@ -40,7 +40,7 @@ go run ./cmd/callhookctl metrics
 ```
 cmd/callhook/            server entrypoint, config, graceful shutdown
 cmd/callhookctl/         CLI client
-internal/api/            HTTP: intake (+batch), campaigns, webhook, dashboard, rate limiting
+internal/api/            HTTP: intake (+batch), campaigns, webhook, web app, rate limiting
 internal/campaign/       campaign engine: goals, waves, early-stop, budgets
 internal/events/         event schema + router (event type → blueprint)
 internal/business/       business Store interface + mock (swap for your CRM)
@@ -61,10 +61,10 @@ internal/store/          crash-safe JSONL journal persistence
 | `GET /api/sessions` | live session feed (states, audit trail, transcripts) |
 | `GET /api/metrics` | aggregate stats |
 | `GET /api/health` | config snapshot |
-| `GET /` | embedded dashboard (being replaced by the web app) |
+| `GET /` | the embedded web app (war room) |
 
-The embedded dashboard in `internal/api/dashboard.go` is the interim UI; the
-web app under `../web` is the real frontend.
+The web app (React, in `../web`) is embedded into this binary via
+`go:embed` — one file, full UI. `make full` builds everything.
 
 ## Full documentation
 

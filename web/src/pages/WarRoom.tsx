@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
 import { timeAgo } from '../lib/format'
+import { useState } from 'react'
 import { OutcomeBadge } from '../components/domain/shared'
 
 export default function WarRoom() {
@@ -12,6 +13,29 @@ export default function WarRoom() {
   const { data: metrics } = usePolling(() => api.metrics(conn), 2000)
   const { data: sessions } = usePolling(() => api.sessions(conn), 2000)
   const { data: campaigns } = usePolling(() => api.campaigns(conn), 3000)
+
+  const [demoBusy, setDemoBusy] = useState(false)
+
+  // First-run demo: three events + one campaign — turns an empty install
+  // into a living war room in one click.
+  async function runDemo() {
+    setDemoBusy(true)
+    try {
+      await api.fire(conn, { id: `demo_evt_${Date.now()}`, type: 'invoice.due', customer_id: 'cus_1002' })
+      await api.fire(conn, { id: `demo_evt_${Date.now()+1}`, type: 'account.warning', customer_id: 'cus_1003', payload: { reason: 'login from a new country', detail: 'A sign-in from Singapore was detected.' } })
+      await api.fire(conn, { id: `demo_evt_${Date.now()+2}`, type: 'promo.offer', customer_id: 'cus_1001', payload: { offer: '20% off your next invoice', expires: 'end of this week' } })
+      await api.createCampaign(conn, {
+        name: 'Demo campaign — September collections',
+        event_type: 'invoice.due',
+        goal: { type: 'count', target: 5, success_outcomes: ['payment_promised'] },
+        audience_source: 'all_overdue',
+        waves: { size: 3, delay: '15s', max_waves: 5 },
+        budget: { max_calls: 15 },
+      })
+    } finally {
+      setDemoBusy(false)
+    }
+  }
 
   const recent = (sessions || []).slice(0, 8)
   const running = (campaigns || []).filter(c => c.status === 'running')
@@ -58,7 +82,15 @@ export default function WarRoom() {
             <strong>Live activity</strong>
             <Link to="/sessions" className="faint" style={{ fontSize: 12 }}>all sessions →</Link>
           </div>
-          {recent.length === 0 && <div className="empty">nothing yet — fire an event or launch a campaign</div>}
+          {recent.length === 0 && (
+            <div className="empty">
+              nothing yet<br />
+              <button className="btn primary" style={{ marginTop: 14 }} disabled={demoBusy} onClick={runDemo}>
+                {demoBusy ? 'Running…' : 'Run the demo'}
+              </button>
+              <p className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>fires 3 events + launches a campaign (dry-run, free)</p>
+            </div>
+          )}
           {recent.map(s => (
             <Link key={s.id} to={`/sessions/${s.id}`} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', justifyContent: 'space-between' }}>
               <span className="mono">{s.customer || s.customer_id}</span>
@@ -86,8 +118,11 @@ export default function WarRoom() {
           <div className="card">
             <strong>Quick actions</strong>
             <div className="row" style={{ marginTop: 12 }}>
+              <button className="btn primary" disabled={demoBusy} onClick={runDemo}>
+                {demoBusy ? 'Running…' : 'Run the demo'}
+              </button>
               <Link to="/fire" className="btn">Fire an event</Link>
-              <Link to="/campaigns" className="btn primary">Launch a campaign</Link>
+              <Link to="/campaigns" className="btn">Launch a campaign</Link>
             </div>
           </div>
         </div>

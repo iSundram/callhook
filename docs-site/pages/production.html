@@ -18,6 +18,8 @@
       </a>
       <div class="nav-links">
         <a href="quickstart.html">Quickstart</a>
+    <a href="install.html">Install</a>
+        <a href="install.html">Install</a>
         <a href="api.html">API</a>
         <a href="events.html">Events</a>
         <a href="campaigns.html">Campaigns</a>
@@ -63,6 +65,8 @@
   <nav class="sidebar-nav">
     <a href="../index.html">Home</a>
     <a href="quickstart.html">Quickstart</a>
+    <a href="install.html">Install</a>
+        <a href="install.html">Install</a>
     <a href="api.html">API Reference</a>
     <a href="events.html">Event Types</a>
     <a href="campaigns.html">Campaigns</a>
@@ -144,9 +148,9 @@ export <span class="kw">CALLHOOK_PUBLIC_URL</span>=https://your-tunnel.example.c
     <p>callhook automatically sets <code>webhook_url</code> on every call it creates.</p>
 
     <h2 id="auth">3. Lock it down (required on any public URL)</h2>
-    <pre><code>export <span class="kw">CALLHOOK_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># POST /api/events requires: Authorization: Bearer &lt;token&gt;</span>
+    <pre><code>export <span class="kw">CALLHOOK_INTAKE_TOKEN</span>=&lt;random&gt;     <span class="cm"># ALL /api/* endpoints require: Authorization: Bearer &lt;token&gt;</span>
 export <span class="kw">CALLHOOK_WEBHOOK_SECRET</span>=&lt;random&gt;  <span class="cm"># POST /callhook/webhook requires: X-Callhook-Secret: &lt;secret&gt;</span></code></pre>
-    <p>Rate limiting (60 events/min per source) is built in.</p>
+    <p>The token gates every API endpoint (including the ones the war room uses — the Connect screen asks for it); <code>/api/health</code> stays open as the connect probe. Rate limiting (60 events/min per source) and CORS are built in.</p>
 
     <h2 id="persistence">4. Persistence</h2>
     <pre><code>export <span class="kw">CALLHOOK_JOURNAL</span>=/var/lib/callhook/sessions.jsonl</code></pre>

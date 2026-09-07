@@ -132,10 +132,9 @@
     </div>
 
     <h2 id="run-callhook">1. Run callhook</h2>
-    <p>Grab a release binary (Linux/macOS/Windows, amd64/arm64) or build from source:</p>
-    <pre><code><span class="cm"># from a release — https://github.com/iSundram/callhook/releases</span>
-$ curl -L https://github.com/iSundram/callhook/releases/latest/download/callhook_linux_amd64.tar.gz | tar xz
-$ ./callhook_linux_amd64/callhook
+    <p>One line installs the single binary — backend, campaigns and the war-room web app all embedded:</p>
+    <pre><code>$ curl -fsSL https://callhook.github.io/install.sh | bash
+$ ./callhook/callhook_linux_amd64/callhook
 
 <span class="cm"># or from source</span>
 $ git clone https://github.com/iSundram/callhook && cd callhook/backend
@@ -147,8 +146,8 @@ supported events: invoice.due, account.warning, promo.offer
 retries: redial after 2h, up to 2 retries | windows: true</code></pre>
     <p>No <code>CALLHOOK_API_KEY</code>? callhook runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
 
-    <h2 id="watch-dashboard">2. Watch the dashboard</h2>
-    <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
+    <h2 id="watch-dashboard">2. The war room</h2>
+    <p>Open <span class="mono">http://localhost:8080/</span> — the war room, callhook's web app (embedded in the binary). Connect, then fire demo events, browse transcripts and audit trails in <strong>Sessions</strong>, or launch a goal-driven campaign from <strong>Campaigns</strong> and watch the audience grid fill live.</p>
 
     <h2 id="fire-real-event">3. Fire a real event</h2>
     <pre><code>$ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{

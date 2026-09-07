@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Reference — callhook</title>
+  <title>Install — callhook</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -18,9 +18,7 @@
       </a>
       <div class="nav-links">
         <a href="quickstart.html">Quickstart</a>
-    <a href="install.html">Install</a>
-        <a href="install.html">Install</a>
-        <a href="api.html" class="active">API</a>
+        <a href="api.html">API</a>
         <a href="events.html">Events</a>
         <a href="campaigns.html">Campaigns</a>
         <a href="production.html">Production</a>
@@ -65,9 +63,7 @@
   <nav class="sidebar-nav">
     <a href="../index.html">Home</a>
     <a href="quickstart.html">Quickstart</a>
-    <a href="install.html">Install</a>
-        <a href="install.html">Install</a>
-    <a href="api.html" class="active">API Reference</a>
+    <a href="api.html">API Reference</a>
     <a href="events.html">Event Types</a>
     <a href="campaigns.html">Campaigns</a>
     <a href="production.html">Production</a>
@@ -92,7 +88,7 @@
     <div class="sidebar-group">
       <div class="sidebar-heading">Reference</div>
       <nav class="sidebar-nav">
-        <a href="api.html" class="active">
+        <a href="api.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
           API Reference
         </a>
@@ -100,7 +96,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           Event Types
         </a>
-        <a href="campaigns.html">
+        <a href="campaigns.html" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
           Campaigns
         </a>
@@ -127,102 +123,66 @@
     <div class="breadcrumbs">
       <a href="../index.html">Docs</a>
       <span class="sep">/</span>
-      <span>API Reference</span>
+      <span>Install</span>
     </div>
 
     <div class="page-header">
-      <h1>API Reference</h1>
-      <p>Five endpoints. Everything a business system needs to reach its customers by voice.</p>
+      <h1>Install</h1>
+      <p>One binary — backend, campaigns and the war-room web app, embedded.</p>
     </div>
 
-    <h2 id="post-events"><span class="badge-method post">POST</span> /api/events</h2>
-    <p>The product. Fire one event; callhook handles all phone communication for it.</p>
-    
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>id</code></td><td><span class="type-chip req">string · required</span></td><td>Unique event id — also the idempotency key (unless <code>idempotency_key</code> is set). Duplicate ids never call twice.</td></tr>
-          <tr><td><code>type</code></td><td><span class="type-chip req">string · required</span></td><td>Event type — see <a href="events.html">Events</a> and <a href="campaigns.html">Campaigns</a>.</td></tr>
-          <tr><td><code>customer_id</code></td><td><span class="type-chip req">string · required</span></td><td>Resolves the customer record from the business store; binds the whole session to one customer.</td></tr>
-          <tr><td><code>phone</code></td><td><span class="type-chip">string</span></td><td>E.164 override. Defaults to the customer's stored number.</td></tr>
-          <tr><td><code>tz</code></td><td><span class="type-chip">string</span></td><td>IANA timezone override (e.g. <code>Asia/Kolkata</code>) for the calling-hours check. Defaults by region.</td></tr>
-          <tr><td><code>payload</code></td><td><span class="type-chip">object</span></td><td>Event-type-specific data (invoice refs, warning reasons, offer details).</td></tr>
-          <tr><td><code>callback_url</code></td><td><span class="type-chip">string</span></td><td>Where the terminal outcome is POSTed. Strongly recommended — this closes the loop.</td></tr>
-          <tr><td><code>not_before</code></td><td><span class="type-chip">string · RFC3339</span></td><td>Park the call until this time. Window rules still apply after it.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p>Responses: <code>202 {"status":"call_placed"}</code> · <code>202 {"status":"scheduled"}</code> (not_before) · <code>202 {"status":"deferred"}</code> (outside calling hours) · <code>200 {"status":"duplicate"}</code>.</p>
+    <h2 id="one-line">One line</h2>
+    <pre><code>$ curl -fsSL https://callhook.github.io/install.sh | bash
+$ ./callhook/callhook_linux_amd64/callhook
 
-    <h2 id="post-batch"><span class="badge-method post">POST</span> /api/events/batch</h2>
-    <p>Fire many events at once. Each is processed independently — one bad event never sinks the batch.</p>
-    <pre><code>{ <span class="st">"events"</span>: [ { <span class="st">"id"</span>: <span class="st">"evt_1"</span>, <span class="st">"type"</span>: <span class="st">"invoice.due"</span>, <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span> }, ... ] }
+<span class="cm"># → war room at http://localhost:8080 (dry-run, no API key needed)</span></code></pre>
+    <p>Linux and macOS, amd64 and arm64. The installer picks the right release automatically.</p>
 
-<span class="cm"># → {"results":[{"session_id":"evt_1","status":"call_placed",...}, ...]}</span></code></pre>
+    <h2 id="manual">Manual download</h2>
+    <p>Grab a binary from the <a href="https://github.com/iSundram/callhook/releases" target="_blank" rel="noopener">releases page</a>:</p>
+    <pre><code>$ curl -L https://github.com/iSundram/callhook/releases/latest/download/callhook_linux_amd64.tar.gz | tar xz
+$ ./callhook_linux_amd64/callhook</code></pre>
 
-    <h2 id="post-webhook"><span class="badge-method post">POST</span> /callhook/webhook</h2>
-    <p>CALL-E's terminal results land here (set <code>CALLHOOK_PUBLIC_URL</code> so CALL-E can reach you). Requires the <code>X-Callhook-Secret</code> header when <code>CALLHOOK_WEBHOOK_SECRET</code> is configured — forged terminal results are rejected. You normally never call this yourself.</p>
+    <h2 id="source">From source</h2>
+    <pre><code>$ git clone https://github.com/iSundram/callhook && cd callhook/backend
+$ go run ./cmd/callhook
 
-    <h2 id="get-sessions"><span class="badge-method get">GET</span> /api/sessions</h2>
-    <p>All sessions with their state, audit trail, outcome and transcript. This is what the dashboard renders.</p>
+<span class="cm"># or build everything (web app embedded):
+$ make full</span></code></pre>
 
-    <h2 id="get-metrics"><span class="badge-method get">GET</span> /api/metrics</h2>
-    <pre><code>{
-  <span class="st">"sessions"</span>: 42,
-  <span class="st">"by_status"</span>:  { <span class="st">"completed"</span>: 35, <span class="st">"failed"</span>: 2, <span class="st">"intake"</span>: 5 },
-  <span class="st">"by_outcome"</span>: { <span class="st">"payment_promised"</span>: 18, <span class="st">"no_answer"</span>: 7, ... },
-  <span class="st">"retries_armed"</span>: 3
-}</code></pre>
-
-    <h2 id="get-health"><span class="badge-method get">GET</span> /api/health</h2>
-    <p>Uptime probe — also the quickest way to check your configuration at a glance.</p>
-    <pre><code>{
-  <span class="st">"ok"</span>: true,
-  <span class="st">"dry_run"</span>: true,           <span class="cm">// no CALLHOOK_API_KEY</span>
-  <span class="st">"windows_enforced"</span>: true,
-  <span class="st">"auth_intake"</span>: false,      <span class="cm">// CALLHOOK_INTAKE_TOKEN unset</span>
-  <span class="st">"auth_webhook"</span>: false
-}</code></pre>
-
-    <h2 id="auth">Authentication</h2>
-    <p>When <code>CALLHOOK_INTAKE_TOKEN</code> is set, both intake endpoints require it:</p>
-    <pre><code>Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;</code></pre>
-    <p>Point callhook at your real business data by implementing the <code>business.Store</code> interface (customers, invoices, promises, escalations) — see <a href="architecture.html">Architecture</a>.</p>
+    <h2 id="first-run">First run</h2>
+    <ol>
+      <li>Run the binary — it starts in <strong>dry-run mode</strong> without an API key: the whole pipeline works, calls are simulated, nothing is spent.</li>
+      <li>Open <span class="mono">http://localhost:8080</span> — the war room. Connect (no token needed locally) and fire a demo event or launch a campaign.</li>
+      <li>To place real calls, set <code>CALLHOOK_API_KEY</code> from your <a href="https://heycall-e.com" target="_blank" rel="noopener">CALL-E</a> account — see <a href="production.html">Production</a>.</li>
+    </ol>
 
     <div class="prevnext">
-      <a href="quickstart.html" class="prevnext-card">
-        <span class="direction">← Previous</span>
-        <span class="title">Quickstart</span>
+      <a href="../index.html" class="prevnext-card">
+        <span class="direction">← Home</span>
+        <span class="title">Overview</span>
       </a>
-      <a href="events.html" class="prevnext-card next">
+      <a href="quickstart.html" class="prevnext-card next">
         <span class="direction">Next →</span>
-        <span class="title">Event Types</span>
+        <span class="title">Quickstart</span>
       </a>
     </div>
   </main>
 
-  <!-- Right On This Page TOC -->
   <aside class="docs-toc">
-    <div class="toc-title">On this page</div>
-    <ul class="toc-list">
-      <li><a href="#post-events" class="toc-link">POST /api/events</a></li>
-      <li><a href="#post-batch" class="toc-link">POST /api/events/batch</a></li>
-      <li><a href="#post-webhook" class="toc-link">POST /callhook/webhook</a></li>
-      <li><a href="#get-sessions" class="toc-link">GET /api/sessions</a></li>
-      <li><a href="#get-metrics" class="toc-link">GET /api/metrics</a></li>
-      <li><a href="#get-health" class="toc-link">GET /api/health</a></li>
-      <li><a href="#auth" class="toc-link">Authentication</a></li>
-    </ul>
-
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#one-line" class="toc-link">One line</a></li>
+        <li><a href="#manual" class="toc-link">Manual download</a></li>
+        <li><a href="#source" class="toc-link">From source</a></li>
+        <li><a href="#first-run" class="toc-link">First run</a></li>
+      </ul>
     <div class="toc-utilities">
-      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/api.html" target="_blank" rel="noopener" class="toc-util-link">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/install.html" target="_blank" rel="noopener" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         Edit on GitHub
       </a>
-      <a href="#post-events" class="toc-util-link">
+      <a href="#one-line" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
         Back to top
       </a>
