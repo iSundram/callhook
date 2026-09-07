@@ -22,3 +22,12 @@ docker:
 
 clean:
 	rm -rf bin data
+
+# Build everything: web app + embed into the single Go binary.
+full:
+	cd ../web && npm ci --no-audit --no-fund && npm run build
+	rm -rf internal/api/webdist && mkdir -p internal/api/webdist
+	cp -r ../web/dist/* internal/api/webdist/
+	touch internal/api/webdist/.gitkeep
+	go build -o bin/callhook ./cmd/callhook
+	go build -o bin/callhookctl ./cmd/callhookctl

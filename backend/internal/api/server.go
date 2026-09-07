@@ -60,20 +60,45 @@ type EventResult struct {
 func (s *Server) Routes() *http.ServeMux {
 	s.limiter = newRateLimiter(60, time.Minute) // 60 events/min per source IP
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/events", s.authIntake(s.limiter.wrap(s.handleEvent)))
-	mux.HandleFunc("POST /api/events/batch", s.authIntake(s.handleEventBatch))
+	mux.HandleFunc("POST /api/events", s.cors(s.authIntake(s.limiter.wrap(s.handleEvent))))
+	mux.HandleFunc("POST /api/events/batch", s.cors(s.authIntake(s.handleEventBatch)))
 	mux.HandleFunc("POST /callhook/webhook", s.authWebhook(s.handleCalleWebhook))
-	mux.HandleFunc("GET /api/sessions", s.handleSessions)
-	mux.HandleFunc("GET /api/metrics", s.handleMetrics)
-	mux.HandleFunc("GET /api/health", s.handleHealth)
+	mux.HandleFunc("GET /api/sessions", s.cors(s.authIntake(s.handleSessions)))
+	mux.HandleFunc("GET /api/metrics", s.cors(s.authIntake(s.handleMetrics)))
+	mux.HandleFunc("GET /api/health", s.cors(s.handleHealth)) // health is the connect probe
 	if s.Campaigns != nil {
-		mux.HandleFunc("POST /api/campaigns", s.authIntake(s.handleCampaignCreate))
-		mux.HandleFunc("GET /api/campaigns", s.handleCampaignList)
-		mux.HandleFunc("GET /api/campaigns/{id}", s.handleCampaignGet)
-		mux.HandleFunc("POST /api/campaigns/{id}/stop", s.authIntake(s.handleCampaignStop))
+		mux.HandleFunc("POST /api/campaigns", s.cors(s.authIntake(s.handleCampaignCreate)))
+		mux.HandleFunc("GET /api/campaigns", s.cors(s.authIntake(s.handleCampaignList)))
+		mux.HandleFunc("GET /api/campaigns/{id}", s.cors(s.authIntake(s.handleCampaignGet)))
+		mux.HandleFunc("POST /api/campaigns/{id}/stop", s.cors(s.authIntake(s.handleCampaignStop)))
 	}
-	mux.HandleFunc("GET /", s.handleDashboard)
+	mux.HandleFunc("GET /", s.handleRoot)
 	return mux
+}
+
+// handleRoot serves the embedded web app when built, the interim dashboard
+// otherwise.
+func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
+	if hasWebApp() {
+		http.FileServer(http.FS(webAppFS())).ServeHTTP(w, r)
+		return
+	}
+	s.handleDashboard(w, r)
+}
+
+// cors allows the web app to talk to this API from any origin (the token is
+// the real gate) and answers preflights.
+func (s *Server) cors(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Callhook-Secret")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next(w, r)
+	}
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
