@@ -97,7 +97,7 @@ business app ──POST /api/events──► callhook ──CALL-E API──► 
 
 ```bash
 # Dry-run mode (no API key needed — fabricates results, burns no balance):
-make run            # or: go run ./cmd/callhook
+cd backend && go run ./cmd/callhook
 
 # Real calls:
 export CALLHOOK_API_KEY=iams_live_...
@@ -130,6 +130,7 @@ Batch variant: `POST /api/events/batch` with `{"events": [...]}`.
 There is also a CLI:
 
 ```bash
+cd backend
 go run ./cmd/callhookctl fire invoice.due cus_1002 --not-before 2026-09-07T14:00:00Z
 go run ./cmd/callhookctl sessions --watch
 go run ./cmd/callhookctl metrics
@@ -152,18 +153,22 @@ Adding a new event type = one blueprint in `internal/events/router.go`
 ## Architecture
 
 ```
-cmd/callhook/            entrypoint, config, graceful shutdown
-cmd/callhookctl/         CLI client (fire, batch, sessions, metrics)
-internal/api/         HTTP: intake (+batch), campaigns, CALL-E webhook, dashboard, metrics, rate limiting
-internal/campaign/    campaign engine: goals, waves, early-stop, budgets, requeue
-internal/events/      event schema + router (event type → call blueprint)
-internal/business/    business Store interface + mock (swap for your CRM/billing)
-internal/callhookclient/ CALL-E Developer API client: calls + Goals API (docs/callhook.openapi.yaml)
-internal/session/     session registry + audit log + retry/schedule triggers
-internal/outcome/     outcome engine: policy-gated writes, escalation, retry policy, callback
-internal/retry/       scheduler: redials, calling-window deferrals, scheduled starts
-internal/callwindow/  polite-hours gate (region → timezone, 9:00–20:00 weekdays)
-internal/store/       crash-safe JSONL journal persistence
+backend/          Go server (see backend/README.md)
+  cmd/callhook/         entrypoint, config, graceful shutdown
+  cmd/callhookctl/      CLI client (fire, batch, sessions, metrics)
+  internal/api/         HTTP: intake (+batch), campaigns, webhook, dashboard, rate limiting
+  internal/campaign/    campaign engine: goals, waves, early-stop, budgets, requeue
+  internal/events/      event schema + router (event type → call blueprint)
+  internal/business/    business Store interface + mock (swap for your CRM/billing)
+  internal/callhookclient/ CALL-E Developer API client (docs/callhook.openapi.yaml)
+  internal/session/     session registry + audit log + retry/schedule triggers
+  internal/outcome/     outcome engine: policy-gated writes, escalation, callbacks
+  internal/retry/       scheduler: redials, calling-window deferrals, scheduled starts
+  internal/callwindow/  polite-hours gate (region → timezone, 9:00–20:00 weekdays)
+  internal/store/       crash-safe JSONL journal persistence
+web/              frontend application (in progress)
+docs-site/        documentation source (deployed to callhook.github.io)
+assets/           logo & brand assets
 ```
 
 - **Read/write separation:** prefetched context is *given* to the voice agent;

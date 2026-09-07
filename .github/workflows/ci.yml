@@ -17,10 +17,13 @@ jobs:
           cache: true
 
       - name: Build
+        working-directory: backend
         run: go build ./...
 
       - name: Vet
+        working-directory: backend
         run: go vet ./...
 
       - name: Test
+        working-directory: backend
         run: go test -race -count=1 ./...
