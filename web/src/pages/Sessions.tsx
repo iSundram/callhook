@@ -9,7 +9,7 @@ import { OutcomeBadge, StatusPill } from '../components/domain/shared'
 export default function Sessions() {
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
-  const { data: sessions } = usePolling(() => api.sessions(conn), 2000)
+  const { data: sessions, stale: sessionsStale } = usePolling(() => api.sessions(conn), 2000)
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
 
@@ -37,7 +37,7 @@ export default function Sessions() {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {sessions === null ? (
+        {(sessions === null || sessionsStale) ? (
           <div style={{ padding: 20 }} aria-busy="true">
             {[0, 1, 2, 3, 4].map(i => (
               <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0' }}>

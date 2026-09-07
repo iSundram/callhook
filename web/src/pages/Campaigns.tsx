@@ -11,7 +11,7 @@ const STATUS_TONE: Record<string, string> = {
 export default function Campaigns() {
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
-  const { data: campaigns, setData } = usePolling(() => api.campaigns(conn), 2500)
+  const { data: campaigns, setData, stale: campaignsStale } = usePolling(() => api.campaigns(conn), 2500)
 
   return (
     <div>
@@ -24,16 +24,16 @@ export default function Campaigns() {
         <CampaignWizard onCreated={c => setData([c, ...(campaigns || [])])} />
       </div>
 
-      {campaigns === null && (
+      {(campaigns === null || campaignsStale) && (
         <div style={{ padding: 20 }} aria-busy="true">
           {[0, 1, 2].map(i => (
             <div key={i} className="skeleton" style={{ height: 92, marginBottom: 14 }} />
           ))}
         </div>
       )}
-      {campaigns !== null && campaigns.length === 0 && <div className="empty">no campaigns yet — launch your first one above</div>}
+      {campaigns !== null && !campaignsStale && campaigns.length === 0 && <div className="empty">no campaigns yet — launch your first one above</div>}
 
-      {(campaigns || []).map(c => {
+      {campaigns !== null && !campaignsStale && campaigns.map(c => {
         const target = c.goal.type === 'count' ? c.goal.target : c.audience.length
         const pct = target ? Math.min(100, Math.round(100 * c.progress.successes / target)) : 0
         return (

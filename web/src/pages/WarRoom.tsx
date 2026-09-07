@@ -13,8 +13,8 @@ export default function WarRoom() {
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
 
-  const { data: metrics, error: metricsErr } = usePolling(() => api.metrics(conn), 2000)
-  const { data: sessions } = usePolling(() => api.sessions(conn), 2000)
+  const { data: metrics, error: metricsErr, stale: metricsStale } = usePolling(() => api.metrics(conn), 2000)
+  const { data: sessions, stale: sessionsStale } = usePolling(() => api.sessions(conn), 2000)
   const { data: campaigns } = usePolling(() => api.campaigns(conn), 3000)
 
   const [demoBusy, setDemoBusy] = useState(false)
@@ -71,7 +71,7 @@ export default function WarRoom() {
         </div>
       )}
 
-      {!metrics && !metricsErr && (
+      {(!metrics || metricsStale) && !metricsErr && (
         <div className="stat-grid" aria-busy="true">
           {[0, 1, 2, 3, 4].map(i => (
             <div key={i} className="card stat">
@@ -82,7 +82,7 @@ export default function WarRoom() {
         </div>
       )}
 
-      {metrics && (
+      {metrics && !metricsStale && (
       <div className="stat-grid">
         <div className="card stat">
           <div className="label">Sessions</div>
@@ -115,7 +115,7 @@ export default function WarRoom() {
             <strong>Live activity</strong>
             <Link to="/sessions" className="faint" style={{ fontSize: 12 }}>all sessions →</Link>
           </div>
-          {recent.length === 0 && sessions === null && (
+          {(sessions === null || sessionsStale) && (
             <div aria-busy="true">
               {[0, 1, 2, 3].map(i => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -126,7 +126,15 @@ export default function WarRoom() {
               ))}
             </div>
           )}
-          {recent.length === 0 && sessions !== null && (
+          {recent.length > 0 && !sessionsStale && sessions !== null && sessions.map(s => (
+            <Link key={s.id} to={`/sessions/${s.id}`} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', justifyContent: 'space-between' }}>
+              <span className="mono">{s.customer || s.customer_id}</span>
+              <span className="pill muted">{s.event_type}</span>
+              <OutcomeBadge outcome={s.outcome?.outcome} />
+              <span className="faint" style={{ fontSize: 11.5 }}>{timeAgo(s.updated_at)}</span>
+            </Link>
+          ))}
+          {recent.length === 0 && sessions !== null && !sessionsStale && (
             <div className="empty">
               nothing yet<br />
               <button className="btn primary" style={{ marginTop: 14 }} disabled={demoBusy} onClick={runDemo}>
@@ -135,14 +143,6 @@ export default function WarRoom() {
               <p className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>fires one event of each type + launches a campaign (dry-run, free)</p>
             </div>
           )}
-          {recent.map(s => (
-            <Link key={s.id} to={`/sessions/${s.id}`} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', justifyContent: 'space-between' }}>
-              <span className="mono">{s.customer || s.customer_id}</span>
-              <span className="pill muted">{s.event_type}</span>
-              <OutcomeBadge outcome={s.outcome?.outcome} />
-              <span className="faint" style={{ fontSize: 11.5 }}>{timeAgo(s.updated_at)}</span>
-            </Link>
-          ))}
         </div>
 
         <div>

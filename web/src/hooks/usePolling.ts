@@ -3,14 +3,19 @@ import { onLiveEvent } from '../lib/live'
 
 // usePolling — fetch on an interval with the previous value kept during
 // refetches (no flicker). The workhorse behind every live view.
+//
+// staleFor: when a refetch takes longer than the grace period (400ms),
+// `stale` flips true — views swap the data area for shimmer ghosts.
+// Fast refreshes (the common case) never show it.
+export const STALE_GRACE_MS = 400
+
 export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled = true) {
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [stale, setStale] = useState(false)
   const fnRef = useRef(fn)
   fnRef.current = fn
 
-  // Live events (SSE) trigger an immediate refetch; the interval is the
-  // fallback and the initial load.
   useEffect(() => {
     if (!enabled) return
     const off = onLiveEvent(() => {
@@ -23,8 +28,12 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
     if (!enabled) return
     let alive = true
     let timer: ReturnType<typeof setTimeout>
+    let graceTimer: ReturnType<typeof setTimeout> | undefined
 
     async function tick() {
+      graceTimer = setTimeout(() => {
+        if (alive) setStale(true) // slow fetch → ghosts replace stale data
+      }, STALE_GRACE_MS)
       try {
         const v = await fnRef.current()
         if (alive) {
@@ -47,15 +56,20 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
           window.location.reload()
         }
       } finally {
-        if (alive) timer = setTimeout(tick, intervalMs)
+        if (graceTimer) clearTimeout(graceTimer)
+        if (alive) {
+          setStale(false)
+          timer = setTimeout(tick, intervalMs)
+        }
       }
     }
     tick()
     return () => {
       alive = false
       clearTimeout(timer)
+      if (graceTimer) clearTimeout(graceTimer)
     }
   }, [intervalMs, enabled])
 
-  return { data, error, setData }
+  return { data, error, stale, setData }
 }

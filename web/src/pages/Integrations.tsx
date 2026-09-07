@@ -10,7 +10,7 @@ import { DOCS } from '../lib/docs'
 export default function Integrations() {
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
-  const { data } = usePolling(() => api.integrations(conn), 15000)
+  const { data, stale } = usePolling(() => api.integrations(conn), 15000)
 
   const list: any[] = data?.integrations || []
   const configured = list.filter(i => i.env_configured).length
@@ -47,7 +47,7 @@ export default function Integrations() {
             signature schemes verified against each platform's official docs
           </span>
         </div>
-        {data === null && (
+        {(data === null || stale) && (
           <div aria-busy="true">
             {[0, 1, 2, 3, 4, 5].map(i => (
               <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -58,8 +58,8 @@ export default function Integrations() {
             ))}
           </div>
         )}
-        {data !== null && list.length === 0 && <div className="empty">catalog unavailable — is the server up to date?</div>}
-        {list.map((i: any) => (
+        {data !== null && !stale && list.length === 0 && <div className="empty">catalog unavailable — is the server up to date?</div>}
+        {data !== null && !stale && list.map((i: any) => (
           <div key={i.platform} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <div className="spread" style={{ alignItems: 'baseline' }}>
               <div className="row">
