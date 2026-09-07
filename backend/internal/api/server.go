@@ -42,7 +42,8 @@ type Server struct {
 	// EnforceWindows defers calls placed outside polite local hours.
 	EnforceWindows bool
 
-	limiter *rateLimiter
+	limiter     *rateLimiter
+	routesCache http.Handler
 }
 
 // EventResult is the pipeline outcome for one fired event — shared by the
@@ -57,7 +58,10 @@ type EventResult struct {
 	Body      map[string]any // full response body (error details etc.)
 }
 
-func (s *Server) Routes() *http.ServeMux {
+func (s *Server) Routes() http.Handler {
+	if s.routesCache != nil {
+		return s.routesCache
+	}
 	s.limiter = newRateLimiter(60, time.Minute) // 60 events/min per source IP
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/events", s.cors(s.authIntake(s.limiter.wrap(s.handleEvent))))
@@ -73,7 +77,21 @@ func (s *Server) Routes() *http.ServeMux {
 		mux.HandleFunc("POST /api/campaigns/{id}/stop", s.cors(s.authIntake(s.handleCampaignStop)))
 	}
 	mux.HandleFunc("GET /", s.handleRoot)
-	return mux
+
+	// OPTIONS preflight must be answered before Go's method-based routing
+	// would 405 it.
+	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions && strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Callhook-Secret")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+	s.routesCache = root
+	return root
 }
 
 // handleRoot serves the embedded web app.
