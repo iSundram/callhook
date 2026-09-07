@@ -27,3 +27,10 @@ jobs:
       - name: Test
         working-directory: backend
         run: go test -race -count=1 ./...
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image (web embed + server)
+        run: docker build -t callhook:ci .

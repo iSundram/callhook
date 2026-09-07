@@ -29,7 +29,10 @@ import (
 var version = "dev"
 
 func main() {
-	addr := getenv("CALLHOOK_ADDR", ":8080")
+	// PORT is honored first (PaaS convention: Render, Railway, Fly, Heroku);
+	// CALLHOOK_ADDR overrides for manual setups; :8080 is the default.
+	addr := ":" + getenv("PORT", getenv("CALLHOOK_ADDR", "8080"))
+	addr = getenv("CALLHOOK_ADDR", addr)
 	apiKey := os.Getenv("CALLHOOK_API_KEY")
 	baseURL := os.Getenv("CALLHOOK_API_BASE")  // optional override, e.g. a proxy
 	publicURL := os.Getenv("CALLHOOK_PUBLIC_URL") // where CALL-E reaches our webhook

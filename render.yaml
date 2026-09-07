@@ -1,0 +1,33 @@
+# Render.com blueprint — deploy callhook with one click.
+# Repo root must contain Dockerfile (it does).
+services:
+  - type: web
+    name: callhook
+    runtime: docker
+    plan: free # bump to starter for always-on; free instances sleep
+    healthCheckPath: /api/health
+    envVars:
+      # ---- demo (dry-run: no API key, fabricated calls, $0) ----
+      - key: CALLHOOK_API_KEY
+        sync: false # set in dashboard when going live
+      # ---- required for real calls ----
+      - key: CALLHOOK_PUBLIC_URL
+        sync: false # your onrender.com URL after first deploy
+      - key: CALLHOOK_WEBHOOK_SECRET
+        generateValue: true
+      - key: CALLHOOK_INTAKE_TOKEN
+        generateValue: true
+      # ---- persistence (survives redeploys; needs a disk) ----
+      - key: CALLHOOK_JOURNAL
+        value: /app/data/sessions.jsonl
+      - key: CALLHOOK_CAMPAIGN_JOURNAL
+        value: /app/data/campaigns.jsonl
+      # ---- integrations you want live (all optional for the demo) ----
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: GENERIC_BEARER_TOKEN
+        generateValue: true
+    disk:
+      name: callhook-data
+      mountPath: /app/data
+      sizeGB: 1 # free plan supports 1 GB
