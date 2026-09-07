@@ -56,7 +56,7 @@ jobs:
             mv callhookctl callhookctl.exe
           fi
           mv callhook* dist/callhook_${GOOS}_${GOARCH}/
-          cp backend/README.md README.md LICENSE backend/.env.example dist/callhook_${GOOS}_${GOARCH}/
+          cp backend/README.md LICENSE backend/.env.example dist/callhook_${GOOS}_${GOARCH}/
 
       - name: Package
         run: |

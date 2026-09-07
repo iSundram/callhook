@@ -2,7 +2,5 @@
 data/
 bin/
 /tmp/
-backend/internal/api/webdist/*
-!backend/internal/api/webdist/.gitkeep
 web/node_modules/
 web/dist/
