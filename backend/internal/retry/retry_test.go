@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -34,11 +35,11 @@ func TestSchedulerFiresDueRetry(t *testing.T) {
 	sessions.Create("r1", events.Event{ID: "r1", Type: "invoice.due"}, nil)
 	sessions.SetCallID("r1", "call_r1")
 
-	placed := 0
+	var placed atomic.Int32
 	s := &Scheduler{
 		Sessions: sessions,
 		Place: func(sess *session.Session) (*callhookclient.CallTask, bool, error) {
-			placed++
+			placed.Add(1)
 			return &callhookclient.CallTask{ID: "call_r1_again", Status: "completed"}, true, nil
 		},
 		Tick: time.Millisecond,
@@ -49,15 +50,15 @@ func TestSchedulerFiresDueRetry(t *testing.T) {
 	stop := runScheduler(s)
 	defer stop()
 
-	waitUntil(t, 2*time.Second, func() bool { return placed >= 1 })
+	waitUntil(t, 2*time.Second, func() bool { return placed.Load() >= 1 })
 	// RetryCount consumed by the fire.
 	if got := sessions.RetryState("r1"); got != 1 {
 		t.Errorf("retry count = %d, want 1", got)
 	}
 	// No double-fire: give it extra ticks and re-check.
 	time.Sleep(50 * time.Millisecond)
-	if placed != 1 {
-		t.Errorf("double fire! placed = %d, want 1", placed)
+	if n := placed.Load(); n != 1 {
+		t.Errorf("double fire! placed = %d, want 1", n)
 	}
 }
 
@@ -66,12 +67,12 @@ func TestSchedulerDefersOutsideWindows(t *testing.T) {
 	sessions.Create("w1", events.Event{ID: "w1", Type: "invoice.due"}, nil)
 	sessions.SetCallTarget("w1", "+15550001", "en-US", "US", "")
 
-	placed := 0
+	var placed atomic.Int32
 	s := &Scheduler{
 		Sessions:       sessions,
 		EnforceWindows: true,
 		Place: func(sess *session.Session) (*callhookclient.CallTask, bool, error) {
-			placed++
+			placed.Add(1)
 			return nil, true, nil
 		},
 		Tick: time.Millisecond,
@@ -85,8 +86,8 @@ func TestSchedulerDefersOutsideWindows(t *testing.T) {
 		got, ok := sessions.Get("w1")
 		return ok && got.NextRetryKind == session.KindWindow
 	})
-	if placed != 0 {
-		t.Fatalf("placed = %d, want 0 (deferred outside window)", placed)
+	if n := placed.Load(); n != 0 {
+		t.Fatalf("placed = %d, want 0 (deferred outside window)", n)
 	}
 	got, _ := sessions.Get("w1")
 	if got.RetryCount != 0 {

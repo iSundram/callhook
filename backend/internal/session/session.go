@@ -122,20 +122,28 @@ func (s *Store) Create(id string, e events.Event, c *business.Customer) *Session
 	return sess
 }
 
+// Get returns a COPY of the session — callers never hold the live pointer,
+// so field reads can never race scheduler writes.
 func (s *Store) Get(id string) (*Session, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	sess, ok := s.sessions[id]
-	return sess, ok
+	if !ok {
+		return nil, false
+	}
+	cp := *sess
+	return &cp, true
 }
 
 // FindByCallID locates a session by its CALL-E call id (webhook path).
+// Returns a copy — see Get.
 func (s *Store) FindByCallID(callID string) (*Session, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, sess := range s.sessions {
 		if sess.CallID == callID {
-			return sess, true
+			cp := *sess
+			return &cp, true
 		}
 	}
 	return nil, false
