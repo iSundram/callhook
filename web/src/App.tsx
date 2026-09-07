@@ -1,5 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import { subscribeLive, unsubscribeLive } from './lib/live'
 import AppShell from './components/layout/AppShell'
 import Connect from './pages/Connect'
 import WarRoom from './pages/WarRoom'
@@ -11,7 +13,14 @@ import Fire from './pages/Fire'
 import Settings from './pages/Settings'
 
 function Gate() {
-  const { connected } = useAuth()
+  const { connected, baseUrl, token } = useAuth()
+
+  useEffect(() => {
+    if (connected && baseUrl) subscribeLive(baseUrl, token)
+    else unsubscribeLive()
+    return unsubscribeLive
+  }, [connected, baseUrl, token])
+
   if (!connected) return <Connect />
   return (
     <HashRouter>

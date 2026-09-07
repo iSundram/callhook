@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { onLiveEvent } from '../lib/live'
 
 // usePolling — fetch on an interval with the previous value kept during
 // refetches (no flicker). The workhorse behind every live view.
@@ -7,6 +8,16 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
   const [error, setError] = useState<string | null>(null)
   const fnRef = useRef(fn)
   fnRef.current = fn
+
+  // Live events (SSE) trigger an immediate refetch; the interval is the
+  // fallback and the initial load.
+  useEffect(() => {
+    if (!enabled) return
+    const off = onLiveEvent(() => {
+      fnRef.current().then(setData).catch(() => {})
+    })
+    return off
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) return

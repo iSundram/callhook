@@ -56,10 +56,11 @@ type Action struct {
 // Store is the session registry. If a persist callback is set, every
 // mutation is journaled so state survives restarts (see internal/store).
 type Store struct {
-	mu       sync.RWMutex
-	sessions map[string]*Session
-	seenKeys map[string]bool
-	onMutate func(*Session)
+	mu        sync.RWMutex
+	sessions  map[string]*Session
+	seenKeys  map[string]bool
+	onMutate  func(*Session)
+	onNotify  func(*Session) // live subscribers (SSE) — fire-and-forget
 }
 
 func NewStore() *Store {
@@ -67,6 +68,14 @@ func NewStore() *Store {
 		sessions: map[string]*Session{},
 		seenKeys: map[string]bool{},
 	}
+}
+
+// SetNotifier installs a live-subscriber callback fired on every mutation
+// (SSE stream). Best-effort: must not block.
+func (s *Store) SetNotifier(fn func(*Session)) {
+	s.mu.Lock()
+	s.onNotify = fn
+	s.mu.Unlock()
 }
 
 // SetPersister installs a callback invoked (outside the store lock) after
@@ -299,6 +308,9 @@ func (s *Store) persist(fn func(*Session), sess *Session) {
 	}
 	cp := *sess
 	fn(&cp)
+	if s.onNotify != nil {
+		s.onNotify(&cp)
+	}
 }
 
 // Snapshot returns a dashboard-ready copy of all sessions, newest first.

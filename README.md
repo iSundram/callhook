@@ -175,6 +175,25 @@ assets/           logo & brand assets
 - **The mock store is the product surface:** implementing `business.Store`
   against a real CRM/billing API turns callhook into a production integration.
 
+## MCP server — agents operate the voice channel
+
+CALL-E's ecosystem is MCP-first; callhook speaks it natively. `POST /mcp`
+(Streamable HTTP, JSON-RPC 2.0) exposes six tools — `fire_event`,
+`launch_campaign`, `get_campaign`, `list_sessions`, `list_event_types`,
+`run_demo` — so Claude Code, Cursor, or any MCP client can place calls and
+run campaigns conversationally:
+
+> "Collect 5 payment promises from the overdue list" → agent → `launch_campaign` → waves fire → early-stop at the goal.
+
+Point any MCP client at `http://localhost:8080/mcp`.
+
+## Live SSE stream
+
+`GET /api/stream` — Server-Sent Events: every session and campaign mutation
+pushed the moment it happens. The war room updates instantly; interval
+polling remains the fallback. (EventSource can't send headers, so the stream
+endpoint accepts the token as `?token=` when auth is on.)
+
 ## Goals API (enterprise path)
 
 Besides free-text call tasks, CALL-E supports **Goals** — reusable, versioned

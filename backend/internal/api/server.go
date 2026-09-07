@@ -45,6 +45,8 @@ type Server struct {
 	// MCP, when set, serves the Model Context Protocol at POST /mcp —
 	// callhook as agent tools.
 	MCP *mcp.Server
+	// Stream is the SSE broker for /api/stream (live war-room updates).
+	Stream *Broker
 
 	limiter     *rateLimiter
 	routesCache http.Handler
@@ -74,6 +76,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /api/sessions", s.cors(s.authIntake(s.handleSessions)))
 	mux.HandleFunc("GET /api/metrics", s.cors(s.authIntake(s.handleMetrics)))
 	mux.HandleFunc("GET /api/health", s.cors(s.handleHealth)) // health is the connect probe
+	if s.Stream != nil {
+		mux.HandleFunc("GET /api/stream", s.handleStream)
+	}
 	if s.Campaigns != nil {
 		mux.HandleFunc("POST /api/campaigns", s.cors(s.authIntake(s.handleCampaignCreate)))
 		mux.HandleFunc("GET /api/campaigns", s.cors(s.authIntake(s.handleCampaignList)))
@@ -569,6 +574,11 @@ func (rl *rateLimiter) allow(key string, now time.Time) bool {
 	return true
 }
 
+
+// handleStream serves the SSE live stream.
+func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
+	s.serveStream(w, r)
+}
 
 // handleMCP serves the MCP transport.
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {

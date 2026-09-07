@@ -154,10 +154,18 @@ type Store struct {
 	campaigns map[string]*Campaign
 	nextSeq   int
 	onMutate  func(*Campaign)
+	onNotify  func(*Campaign) // live subscribers (SSE) — fire-and-forget
 }
 
 func NewStore() *Store {
 	return &Store{campaigns: map[string]*Campaign{}}
+}
+
+// SetNotifier installs a live-subscriber callback fired on every mutation.
+func (s *Store) SetNotifier(fn func(*Campaign)) {
+	s.mu.Lock()
+	s.onNotify = fn
+	s.mu.Unlock()
 }
 
 func (s *Store) SetPersister(fn func(*Campaign)) {
@@ -268,6 +276,9 @@ func (s *Store) persist(fn func(*Campaign), c *Campaign) {
 	}
 	cp := *c
 	fn(&cp)
+	if s.onNotify != nil {
+		s.onNotify(&cp)
+	}
 }
 
 func itoa(n int) string {

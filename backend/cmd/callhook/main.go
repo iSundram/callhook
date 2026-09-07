@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"context"
 	"log"
 	"net/http"
@@ -111,6 +112,15 @@ func main() {
 
 	maxConcurrent := getint("CALLHOOK_MAX_CONCURRENT", 3)
 
+	broker := api.NewBroker()
+	sessions.SetNotifier(func(sess *session.Session) {
+		view := sessionViewOf(sess)
+		broker.Publish("session", view)
+	})
+	campaigns.SetNotifier(func(c *campaign.Campaign) {
+		broker.Publish("campaign", c)
+	})
+
 	srv := &api.Server{
 		Router:         events.NewRouter(),
 		Store:          storeB,
@@ -118,6 +128,7 @@ func main() {
 		Calle:          client,
 		Outcomes:       outcomes,
 		Campaigns:      campaigns,
+		Stream:         broker,
 		PublicBaseURL:  publicURL,
 		IntakeToken:    intakeToken,
 		WebhookSecret:  webhookSecret,
@@ -211,4 +222,12 @@ func getdur(key string, def time.Duration) time.Duration {
 		log.Printf("invalid %s — using default %s", key, def)
 	}
 	return def
+}
+
+// sessionViewOf converts a session to the JSON shape the stream sends.
+func sessionViewOf(sess *session.Session) map[string]any {
+	b, _ := json.Marshal(sess)
+	var m map[string]any
+	_ = json.Unmarshal(b, &m)
+	return m
 }

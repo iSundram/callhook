@@ -166,7 +166,13 @@
     <h2 id="post-webhook"><span class="badge-method post">POST</span> /callhook/webhook</h2>
     <p>CALL-E's terminal results land here (set <code>CALLHOOK_PUBLIC_URL</code> so CALL-E can reach you). Requires the <code>X-Callhook-Secret</code> header when <code>CALLHOOK_WEBHOOK_SECRET</code> is configured — forged terminal results are rejected. You normally never call this yourself.</p>
 
-    <h2 id="get-sessions"><span class="badge-method get">GET</span> /api/sessions</h2>
+    <h2 id="mcp"><span class="badge-method post">POST</span> /mcp</h2>
+  <p>The <a href="../index.html">MCP server</a> — callhook as agent tools (Streamable HTTP, JSON-RPC 2.0). Tools: <code>fire_event</code>, <code>launch_campaign</code>, <code>get_campaign</code>, <code>list_sessions</code>, <code>list_event_types</code>, <code>run_demo</code>. Point any MCP client here.</p>
+
+  <h2 id="stream"><span class="badge-method get">GET</span> /api/stream</h2>
+  <p>Server-Sent Events: <code>session</code> and <code>campaign</code> events pushed on every mutation. The war room's live updates ride this stream; polling is the fallback. With auth on, pass the token as <code>?token=</code> (EventSource cannot send headers).</p>
+
+  <h2 id="get-sessions"><span class="badge-method get">GET</span> /api/sessions</h2>
     <p>All sessions with their state, audit trail, outcome and transcript. This is what the dashboard renders.</p>
 
     <h2 id="get-metrics"><span class="badge-method get">GET</span> /api/metrics</h2>
