@@ -15,6 +15,7 @@ import (
 	"github.com/iSundram/callhook/internal/callwindow"
 	"github.com/iSundram/callhook/internal/campaign"
 	"github.com/iSundram/callhook/internal/events"
+	"github.com/iSundram/callhook/internal/mcp"
 	"github.com/iSundram/callhook/internal/outcome"
 	"github.com/iSundram/callhook/internal/session"
 )
@@ -41,6 +42,9 @@ type Server struct {
 	WebhookSecret string
 	// EnforceWindows defers calls placed outside polite local hours.
 	EnforceWindows bool
+	// MCP, when set, serves the Model Context Protocol at POST /mcp —
+	// callhook as agent tools.
+	MCP *mcp.Server
 
 	limiter     *rateLimiter
 	routesCache http.Handler
@@ -75,6 +79,9 @@ func (s *Server) Routes() http.Handler {
 		mux.HandleFunc("GET /api/campaigns", s.cors(s.authIntake(s.handleCampaignList)))
 		mux.HandleFunc("GET /api/campaigns/{id}", s.cors(s.authIntake(s.handleCampaignGet)))
 		mux.HandleFunc("POST /api/campaigns/{id}/stop", s.cors(s.authIntake(s.handleCampaignStop)))
+	}
+	if s.MCP != nil {
+		mux.HandleFunc("POST /mcp", s.cors(s.authIntake(s.handleMCP)))
 	}
 	mux.HandleFunc("GET /", s.handleRoot)
 
@@ -560,4 +567,156 @@ func (rl *rateLimiter) allow(key string, now time.Time) bool {
 	}
 	rl.hits[key] = append(kept, now)
 	return true
+}
+
+
+// handleMCP serves the MCP transport.
+func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
+	s.MCP.HandleHTTP(w, r)
+}
+
+// BuildMCP wires the MCP server's tools to this API server.
+func (s *Server) BuildMCP() *mcp.Server {
+	s.MCP = &mcp.Server{
+		FireEvent: func(args json.RawMessage) (string, error) {
+			// MCP arguments use event_type/customer_id naming.
+			var args_ struct {
+				EventType  string `json:"event_type"`
+				CustomerID string `json:"customer_id"`
+				Phone      string `json:"phone"`
+				NotBefore  string `json:"not_before"`
+				Type       string `json:"type"`
+			}
+			if err := mcp.MarshalArg(args, &args_); err != nil {
+				return "", err
+			}
+			ev := events.Event{
+				Type:       args_.EventType,
+				CustomerID: args_.CustomerID,
+				Phone:      args_.Phone,
+				NotBefore:  args_.NotBefore,
+			}
+			if ev.Type == "" {
+				ev.Type = args_.Type
+			}
+			if ev.ID == "" {
+				ev.ID = "mcp_" + time.Now().UTC().Format("20060102_150405.000000000")
+			}
+			res := s.ProcessEvent(&ev)
+			b, _ := json.Marshal(res.Body)
+			return string(b), nil
+		},
+		LaunchCampaign: func(args json.RawMessage) (string, error) {
+			var req struct {
+				Name      string `json:"name"`
+				EventType string `json:"event_type"`
+				Target    int    `json:"target"`
+				Budget    int    `json:"budget"`
+				WaveSize  int    `json:"wave_size"`
+			}
+			if err := mcp.MarshalArg(args, &req); err != nil {
+				return "", err
+			}
+			if req.EventType == "" || req.Target <= 0 {
+				return "", fmt.Errorf("event_type and target>0 are required")
+			}
+			success := []string{"payment_promised", "accepted", "acknowledged", "confirmed"}
+			audience, err := s.Store.ListOverdueCustomers()
+			if err != nil {
+				return "", err
+			}
+			budget := req.Budget
+			if budget == 0 {
+				budget = 15
+			}
+			size := req.WaveSize
+			if size == 0 {
+				size = 3
+			}
+			name := req.Name
+			if name == "" {
+				name = "MCP campaign — " + req.EventType
+			}
+			var entries []campaign.AudienceEntry
+			for _, c := range audience {
+				entries = append(entries, campaign.AudienceEntry{CustomerID: c.ID, State: campaign.EntryPending})
+			}
+			cc := s.Campaigns.Create(name, req.EventType, nil,
+				campaign.GoalSpec{Type: campaign.GoalCount, Target: req.Target, SuccessOutcomes: success},
+				entries, campaign.WavePolicy{Size: size, Delay: campaign.Duration{Duration: 30 * time.Second}},
+				campaign.Budget{MaxCalls: budget})
+			b, _ := json.Marshal(map[string]any{"campaign_id": cc.ID, "status": cc.Status, "audience": len(entries), "budget": budget})
+			return string(b), nil
+		},
+		GetCampaign: func(args json.RawMessage) (string, error) {
+			var req struct {
+				CampaignID string `json:"campaign_id"`
+			}
+			if err := mcp.MarshalArg(args, &req); err != nil {
+				return "", err
+			}
+			c, ok := s.Campaigns.Get(req.CampaignID)
+			if !ok {
+				return "", fmt.Errorf("campaign not found: %s", req.CampaignID)
+			}
+			b, _ := json.MarshalIndent(c, "", "  ")
+			return string(b), nil
+		},
+		ListSessions: func(args json.RawMessage) (string, error) {
+			var req struct {
+				Limit int `json:"limit"`
+			}
+			if err := mcp.MarshalArg(args, &req); err != nil {
+				return "", err
+			}
+			if req.Limit <= 0 {
+				req.Limit = 10
+			}
+			views := s.Sessions.Snapshot()
+			if len(views) > req.Limit {
+				views = views[:req.Limit]
+			}
+			out := make([]map[string]any, 0, len(views))
+			for _, v := range views {
+				out = append(out, map[string]any{
+					"id": v.ID, "customer": v.Customer, "event_type": v.EventType,
+					"status": v.CallStatus, "outcome": v.Outcome["outcome"], "phone": v.Phone,
+				})
+			}
+			b, _ := json.MarshalIndent(out, "", "  ")
+			return string(b), nil
+		},
+		ListEventTypes: func() (string, error) {
+			out := map[string]any{}
+			for _, typ := range s.Router.Supported() {
+				bp, _ := s.Router.Blueprint(typ)
+				out[typ] = bp.ResultSchema
+			}
+			b, _ := json.MarshalIndent(out, "", "  ")
+			return string(b), nil
+		},
+		RunDemo: func() (string, error) {
+			for i, cid := range []string{"cus_1002", "cus_1003", "cus_1001"} {
+				ev := events.Event{ID: fmt.Sprintf("mcp_demo_%d_%d", time.Now().UnixNano(), i), Type: "invoice.due", CustomerID: cid}
+				if i == 1 {
+					ev.Type = "account.warning"
+				}
+				if i == 2 {
+					ev.Type = "promo.offer"
+				}
+				s.ProcessEvent(&ev)
+			}
+			audience, _ := s.Store.ListOverdueCustomers()
+			var entries []campaign.AudienceEntry
+			for _, c := range audience {
+				entries = append(entries, campaign.AudienceEntry{CustomerID: c.ID, State: campaign.EntryPending})
+			}
+			cc := s.Campaigns.Create("MCP demo campaign", "invoice.due", nil,
+				campaign.GoalSpec{Type: campaign.GoalCount, Target: 5, SuccessOutcomes: []string{"payment_promised"}},
+				entries, campaign.WavePolicy{Size: 3, Delay: campaign.Duration{Duration: 15 * time.Second}},
+				campaign.Budget{MaxCalls: 15})
+			return fmt.Sprintf("demo running: 3 events fired + campaign %s launched (goal: 5 payment promises, budget 15)", cc.ID), nil
+		},
+	}
+	return s.MCP
 }

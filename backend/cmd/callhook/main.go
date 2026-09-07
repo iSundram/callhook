@@ -148,6 +148,8 @@ func main() {
 	go sched.Run(ctx)
 	go runCampaignPump(ctx, campRunner, retryTick)
 
+	srv.BuildMCP() // MCP tools at POST /mcp
+
 	httpSrv := &http.Server{Addr: addr, Handler: srv.Routes()}
 	go func() {
 		sig := make(chan os.Signal, 1)
