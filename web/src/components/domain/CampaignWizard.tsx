@@ -135,7 +135,7 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
 
       {err && <div className="pill err" style={{ marginBottom: 10 }}>{err}</div>}
       <button className="btn primary" disabled={busy} onClick={create}>
-        {busy ? 'Launching…' : '🚀 Launch campaign'}
+        {busy ? 'Launching…' : 'Launch campaign'}
       </button>
     </div>
   )

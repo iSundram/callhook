@@ -86,8 +86,8 @@ export default function WarRoom() {
           <div className="card">
             <strong>Quick actions</strong>
             <div className="row" style={{ marginTop: 12 }}>
-              <Link to="/fire" className="btn">⚡ Fire an event</Link>
-              <Link to="/campaigns" className="btn primary">🎯 Launch a campaign</Link>
+              <Link to="/fire" className="btn">Fire an event</Link>
+              <Link to="/campaigns" className="btn primary">Launch a campaign</Link>
             </div>
           </div>
         </div>

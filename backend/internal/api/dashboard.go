@@ -61,10 +61,10 @@ const dashboardHTML = `<!doctype html>
 <div id="metrics"></div>
 <main>
   <div class="fire">
-    <button onclick="fire('invoice.due')">⚡ fire invoice.due (cus_1002)</button>
-    <button onclick="fire('account.warning')">⚡ fire account.warning (cus_1003)</button>
-    <button onclick="fire('promo.offer')">⚡ fire promo.offer (cus_1001)</button>
-    <button onclick="launchCampaign()">🎯 launch demo campaign</button>
+    <button onclick="fire('invoice.due')">fire invoice.due (cus_1002)</button>
+    <button onclick="fire('account.warning')">fire account.warning (cus_1003)</button>
+    <button onclick="fire('promo.offer')">fire promo.offer (cus_1001)</button>
+    <button onclick="launchCampaign()">launch demo campaign</button>
   </div>
   <div id="campaigns"></div>
   <div id="list"><div class="empty">no sessions yet — fire an event above (or POST /api/events)</div></div>
@@ -117,7 +117,7 @@ function renderCampaignsHTML(campaigns) {
       '<div>' + new Date(l.at).toLocaleTimeString() + ' — ' + esc(l.event) + (l.note ? ': ' + esc(l.note) : '') + '</div>').join('');
     const nextWave = c.next_wave_at && !done ? ' · next wave ' + new Date(c.next_wave_at).toLocaleTimeString() : '';
     return '<div class="campaign"><div class="head">' +
-      '<span class="title">🎯 ' + esc(c.name) + '</span>' +
+      '<span class="title">' + esc(c.name) + '</span>' +
       '<span class="pill cmp' + (done ? ' done' : '') + '">' + esc(c.status) + '</span>' +
       '<span class="pill">' + c.wave_number + ' wave(s)' + nextWave + '</span>' +
       (c.campaign ? '' : '') +

@@ -34,7 +34,7 @@ export default function Campaigns() {
             <div className="card">
               <div className="spread">
                 <div className="row">
-                  <strong style={{ fontSize: 15 }}>🎯 {c.name}</strong>
+                  <strong style={{ fontSize: 15 }}>{c.name}</strong>
                   <span className={`pill ${STATUS_TONE[c.status] || 'muted'}`}>
                     {c.status === 'running' && <span className="dot" />} {c.status}
                   </span>

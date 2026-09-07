@@ -86,7 +86,7 @@ export default function Fire() {
             <input className="input" type="datetime-local" value={notBefore} onChange={e => setNotBefore(e.target.value)} />
           </div>
           <button className="btn primary" disabled={busy} onClick={fire}>
-            {busy ? 'Firing…' : '⚡ Fire event'}
+            {busy ? 'Firing…' : 'Fire event'}
           </button>
           {err && <div className="pill err" style={{ marginTop: 12 }}>{err}</div>}
           {result && (

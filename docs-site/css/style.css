@@ -185,6 +185,20 @@ a:hover {
   text-decoration: none;
 }
 
+.logo-full {
+  height: 21px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.footer-logo {
+  height: 15px;
+  width: auto;
+  opacity: .85;
+  margin-bottom: 8px;
+}
+
 .logo-mark {
   width: 20px;
   height: 18px;

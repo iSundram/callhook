@@ -30,7 +30,7 @@ export default function CampaignDetail() {
       <div className="page-header">
         <div className="spread">
           <div>
-            <h1>🎯 {c.name}</h1>
+            <h1>{c.name}</h1>
             <p className="mono">{c.id} · {c.event_type}</p>
           </div>
           <div className="row">
