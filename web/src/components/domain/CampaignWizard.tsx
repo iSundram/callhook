@@ -1,17 +1,36 @@
 import { useState } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { EVENT_TYPES, eventDef } from '../../lib/events'
 
-const EVENT_TYPES = [
-  { value: 'invoice.due', label: 'invoice.due — overdue invoice chase' },
-  { value: 'account.warning', label: 'account.warning — security notice' },
-  { value: 'promo.offer', label: 'promo.offer — loyalty offer' },
-]
-
-const PRESETS: Record<string, any> = {
-  'invoice.due': { name: 'September collections', goal: { type: 'count', target: 5, success_outcomes: ['payment_promised'] }, waves: { size: 3, delay: '30s', max_waves: 6 }, budget: { max_calls: 15 } },
-  'account.warning': { name: 'Security sweep', goal: { type: 'reach_all', success_outcomes: ['acknowledged'] }, waves: { size: 5, delay: '30s', max_waves: 3 }, budget: { max_calls: 40 } },
-  'promo.offer': { name: 'Loyalty push', goal: { type: 'count', target: 8, success_outcomes: ['accepted'] }, waves: { size: 4, delay: '30s', max_waves: 4 }, budget: { max_calls: 20 } },
+// Per-type presets: name + goal sized to the type's natural success outcome.
+const presetFor = (type: string) => {
+  const def = eventDef(type)
+  const names: Record<string, string> = {
+    'invoice.due': 'September collections',
+    'account.warning': 'Security sweep',
+    'promo.offer': 'Loyalty push',
+    'delivery.window': 'Delivery confirmations',
+    'appointment.reminder': 'Appointment confirmations',
+    'payment.failed': 'Failed payment recovery',
+    'subscription.expiring': 'Renewal push',
+    'feedback.request': 'Feedback round',
+  }
+  const targets: Record<string, number> = {
+    'invoice.due': 5, 'account.warning': 10, 'promo.offer': 8,
+    'delivery.window': 6, 'appointment.reminder': 6, 'payment.failed': 5,
+    'subscription.expiring': 6, 'feedback.request': 10,
+  }
+  return {
+    name: names[type] || def.label,
+    goal_type: 'count',
+    target: targets[type] || 5,
+    success: def.successOutcome,
+    size: 3,
+    delay: '30s',
+    max_waves: 6,
+    max_calls: 15,
+  }
 }
 
 export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => void }) {
@@ -66,7 +85,7 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
       <div className="spread" style={{ marginBottom: 14 }}>
         <strong>New campaign</strong>
         <div className="row">
-          <button className="btn sm" onClick={() => setForm({ ...form, ...PRESETS[form.event_type] })}>Load preset</button>
+          <button className="btn sm" onClick={() => setForm({ ...form, ...presetFor(form.event_type) })}>Load preset</button>
           <button className="btn sm" onClick={() => setOpen(false)}>Cancel</button>
         </div>
       </div>
@@ -79,8 +98,8 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
           </div>
           <div className="field">
             <label>Event type</label>
-            <select className="select" value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value, ...PRESETS[e.target.value] })}>
-              {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            <select className="select" value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value, ...presetFor(e.target.value) })}>
+              {EVENT_TYPES.map(e => <option key={e.type} value={e.type}>{e.label}</option>)}
             </select>
           </div>
           <div className="field">
@@ -99,7 +118,7 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
           <div className="field">
             <label>Success outcome</label>
             <select className="select" value={form.success} onChange={e => setForm({ ...form, success: e.target.value })}>
-              {['payment_promised', 'accepted', 'acknowledged'].map(o => <option key={o}>{o}</option>)}
+              {eventDef(form.event_type).outcomes.map(o => <option key={o}>{o}</option>)}
             </select>
           </div>
         </div>

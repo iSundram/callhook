@@ -18,10 +18,11 @@
       </a>
       <div class="nav-links">
         <a href="quickstart.html">Quickstart</a>
-    <a href="install.html">Install</a>
         <a href="install.html">Install</a>
         <a href="api.html">API</a>
         <a href="events.html" class="active">Events</a>
+        <a href="campaigns.html">Campaigns</a>
+        <a href="integrations.html">Integrations</a>
         <a href="production.html">Production</a>
         <a href="architecture.html">Architecture</a>
       </div>
@@ -65,9 +66,10 @@
     <a href="../index.html">Home</a>
     <a href="quickstart.html">Quickstart</a>
     <a href="install.html">Install</a>
-        <a href="install.html">Install</a>
     <a href="api.html">API Reference</a>
     <a href="events.html" class="active">Event Types</a>
+    <a href="campaigns.html">Campaigns</a>
+    <a href="integrations.html">Integrations</a>
     <a href="production.html">Production</a>
     <a href="architecture.html">Architecture</a>
   </nav>
@@ -130,7 +132,7 @@
 
     <div class="page-header">
       <h1>Event Types</h1>
-      <p>Each event type is a blueprint: how the call task is composed, what the agent knows, and what outcome schema comes back. Three ship built-in; new ones are ~60 lines.</p>
+      <p>Each event type is a blueprint: how the call task is composed, what the agent knows, and what outcome schema comes back. Eight ship built-in; new ones are ~60 lines.</p>
     </div>
 
     <h2 id="invoice-due">invoice.due</h2>
@@ -188,6 +190,70 @@
     </div>
     <p>Payload: <code>{"offer": "20% off your next invoice", "expires": "end of this week"}</code></p>
 
+    <h2 id="delivery-window">delivery.window</h2>
+    <p>Confirm a delivery window — or collect one preferred alternative. The agent repeats the window back on confirmation and never leaves order details in a voicemail.</p>
+    <div class="table-container"><table>
+      <thead><tr><th>Outcome</th><th>Meaning</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="status-tag positive"><code>confirmed</code></span></td><td>Accepts the proposed window</td><td>Window repeated back</td></tr>
+        <tr><td><span class="status-tag warning"><code>reschedule_requested</code></span></td><td>Gives an alternative (+ <code>preferred_window</code>)</td><td>One alternative only</td></tr>
+        <tr><td><span class="status-tag neutral"><code>callback_requested</code></span></td><td>Wants a human</td><td>—</td></tr>
+        <tr><td><span class="status-tag neutral"><code>no_answer</code></span></td><td>Unreachable</td><td>Redial up to 2×</td></tr>
+      </tbody>
+    </table></div>
+    <p>Payload: <code>{"window": "tomorrow, 2:00–4:00 PM", "order_ref": "ORD-8472"}</code></p>
+
+    <h2 id="appointment-reminder">appointment.reminder</h2>
+    <p>A warm reminder: confirm, reschedule, or cancel. The agent offers a callback for available times — it never invents times itself.</p>
+    <div class="table-container"><table>
+      <thead><tr><th>Outcome</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="status-tag positive"><code>confirmed</code></span></td><td>Will attend</td></tr>
+        <tr><td><span class="status-tag warning"><code>reschedule_requested</code></span></td><td>Wants a new time</td></tr>
+        <tr><td><span class="status-tag"><code>cancelled</code></span></td><td>Cancels — accepted graciously</td></tr>
+        <tr><td><span class="status-tag neutral"><code>no_answer</code></span></td><td>Unreachable — redial up to 2×</td></tr>
+      </tbody>
+    </table></div>
+    <p>Payload: <code>{"what": "annual check-up", "when": "tomorrow at 10:00 AM"}</code></p>
+
+    <h2 id="payment-failed">payment.failed</h2>
+    <p>The declined-card notice done right: matter-of-fact, never accusatory, and <strong>card details are never discussed on the call</strong> — the payment link goes to the email on file.</p>
+    <div class="table-container"><table>
+      <thead><tr><th>Outcome</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="status-tag positive"><code>will_update_payment</code></span></td><td>Will use the emailed link</td></tr>
+        <tr><td><span class="status-tag warning"><code>already_updated</code></span></td><td>Says it's fixed — account re-checked automatically</td></tr>
+        <tr><td><span class="status-tag neutral"><code>callback_requested</code></span></td><td>Frustrated — billing callback offered</td></tr>
+        <tr><td><span class="status-tag neutral"><code>no_answer</code></span></td><td>Unreachable — redial up to 2×</td></tr>
+      </tbody>
+    </table></div>
+    <p>Payload: <code>{"amount": "the monthly charge", "reason": "the card was declined"}</code></p>
+
+    <h2 id="subscription-expiring">subscription.expiring</h2>
+    <p>One clear renewal offer with a loyalty discount. The offer is mentioned once; if they still decline, the call ends warmly — never a second push.</p>
+    <div class="table-container"><table>
+      <thead><tr><th>Outcome</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="status-tag positive"><code>renewed</code></span></td><td>Accepts the renewal — details emailed</td></tr>
+        <tr><td><span class="status-tag"><code>declined</code></span></td><td>Declines — terminal, never redialed</td></tr>
+        <tr><td><span class="status-tag neutral"><code>callback_requested</code></span></td><td>Wants to talk to the team</td></tr>
+        <tr><td><span class="status-tag neutral"><code>no_answer</code></span></td><td>Unreachable — redial up to 2×</td></tr>
+      </tbody>
+    </table></div>
+    <p>Payload: <code>{"when": "in 7 days", "offer": "a 10% loyalty discount on renewal"}</code></p>
+
+    <h2 id="feedback-request">feedback.request</h2>
+    <p>A two-minute feedback call: one 1–5 satisfaction rating and one open comment. Unhappy customers get a sincere apology and a callback offer.</p>
+    <div class="table-container"><table>
+      <thead><tr><th>Outcome</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="status-tag positive"><code>provided</code></span></td><td>Gave feedback (+ <code>rating</code> 1-5, <code>comment</code>)</td></tr>
+        <tr><td><span class="status-tag neutral"><code>busy_callback_requested</code></span></td><td>Busy — asked to call back</td></tr>
+        <tr><td><span class="status-tag neutral"><code>no_answer</code></span></td><td>Unreachable — redial up to 2×</td></tr>
+      </tbody>
+    </table></div>
+    <p>Payload: <code>{"topic": "their recent experience with the service"}</code></p>
+
     <h2 id="custom-events">Adding your own</h2>
     <p>A blueprint lives in <span class="mono">internal/events/router.go</span> and has exactly two required parts:</p>
     <pre><code><span class="st">"delivery.window"</span>: {
@@ -228,6 +294,11 @@
       <li><a href="#invoice-due" class="toc-link">invoice.due</a></li>
       <li><a href="#account-warning" class="toc-link">account.warning</a></li>
       <li><a href="#promo-offer" class="toc-link">promo.offer</a></li>
+      <li><a href="#delivery-window" class="toc-link">delivery.window</a></li>
+      <li><a href="#appointment-reminder" class="toc-link">appointment.reminder</a></li>
+      <li><a href="#payment-failed" class="toc-link">payment.failed</a></li>
+      <li><a href="#subscription-expiring" class="toc-link">subscription.expiring</a></li>
+      <li><a href="#feedback-request" class="toc-link">feedback.request</a></li>
       <li><a href="#custom-events" class="toc-link">Adding your own</a></li>
       <li><a href="#goals-api" class="toc-link">Goals API</a></li>
     </ul>

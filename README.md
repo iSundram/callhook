@@ -144,6 +144,11 @@ Campaign API: `POST /api/campaigns` (create+start) · `GET /api/campaigns[/{id}]
 | `invoice.due` | overdue invoice chase | `payment_promised` (+date), `claims_already_paid`, `disputed`, `callback_requested`, `refused`, `no_answer` |
 | `account.warning` | security notice | `acknowledged`, `activity_confirmed_legitimate`, `needs_human`, `no_answer` |
 | `promo.offer` | loyalty offer | `accepted`, `declined`, `callback_requested`, `no_answer` |
+| `delivery.window` | confirm delivery slot | `confirmed`, `reschedule_requested` (+window), `callback_requested`, `no_answer` |
+| `appointment.reminder` | confirm attendance | `confirmed`, `reschedule_requested`, `cancelled`, `no_answer` |
+| `payment.failed` | declined card notice | `will_update_payment`, `already_updated`, `callback_requested`, `no_answer` |
+| `subscription.expiring` | renewal offer | `renewed`, `declined`, `callback_requested`, `no_answer` |
+| `feedback.request` | 1-5 rating + comment | `provided` (+rating, comment), `busy_callback_requested`, `no_answer` |
 
 Adding a new event type = one blueprint in `internal/events/router.go`
 (task composer + result schema). Everything else is generic.

@@ -1,27 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
-
-const EVENT_INFO: Record<string, { label: string; desc: string; outcomes: string; demo: any }> = {
-  'invoice.due': {
-    label: 'invoice.due',
-    desc: 'The overdue-invoice chase, done politely. Agent knows amount, due date, days overdue, last payment — handles "I already paid" with grace.',
-    outcomes: 'payment_promised (+date) · claims_already_paid · disputed · callback_requested · refused · no_answer',
-    demo: { reason: '', detail: '' },
-  },
-  'account.warning': {
-    label: 'account.warning',
-    desc: 'Urgent-but-calm security notice. Never asks for passwords, PINs or codes.',
-    outcomes: 'acknowledged · activity_confirmed_legitimate · needs_human · no_answer',
-    demo: { reason: 'login from a new country', detail: 'A sign-in from Singapore was detected.' },
-  },
-  'promo.offer': {
-    label: 'promo.offer',
-    desc: 'Loyalty offer by voice. Under a minute if they\'re not interested; never pushes twice.',
-    outcomes: 'accepted · declined · callback_requested · no_answer',
-    demo: { offer: '20% off your next invoice', expires: 'end of this week' },
-  },
-}
+import { EVENT_TYPES, eventDef } from '../lib/events'
 
 export default function Fire() {
   const { baseUrl, token } = useAuth()
@@ -43,7 +23,7 @@ export default function Fire() {
         id: `evt_web_${Date.now()}`,
         type,
         customer_id: customerId,
-        payload: EVENT_INFO[type].demo,
+        payload: eventDef(type).demo,
       }
       if (phone) body.phone = phone
       if (notBefore) body.not_before = new Date(notBefore).toISOString()
@@ -55,7 +35,7 @@ export default function Fire() {
     }
   }
 
-  const info = EVENT_INFO[type]
+  const info = eventDef(type)
 
   return (
     <div>
@@ -69,7 +49,7 @@ export default function Fire() {
           <div className="field">
             <label>Event type</label>
             <select className="select" value={type} onChange={e => setType(e.target.value)}>
-              {Object.keys(EVENT_INFO).map(t => <option key={t} value={t}>{EVENT_INFO[t].label}</option>)}
+              {EVENT_TYPES.map(e => <option key={e.type} value={e.type}>{e.label}</option>)}
             </select>
           </div>
           <div className="field">
@@ -102,7 +82,7 @@ export default function Fire() {
             <strong>{info.label}</strong>
             <p className="muted" style={{ fontSize: 13, margin: '8px 0' }}>{info.desc}</p>
             <div className="section-title" style={{ marginTop: 14, marginBottom: 6 }}>Structured outcomes</div>
-            <p className="mono" style={{ fontSize: 12, color: 'var(--brand-silver)' }}>{info.outcomes}</p>
+            <p className="mono" style={{ fontSize: 12, color: 'var(--brand-silver)' }}>{info.outcomes.join(' · ')}</p>
           </div>
           <div className="card" style={{ marginTop: 14 }}>
             <strong>Tip</strong>

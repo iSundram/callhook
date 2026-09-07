@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Reference — callhook</title>
+  <title>Integrations — callhook</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -19,10 +19,9 @@
       <div class="nav-links">
         <a href="quickstart.html">Quickstart</a>
     <a href="install.html">Install</a>
-        <a href="api.html" class="active">API</a>
+        <a href="api.html">API</a>
         <a href="events.html">Events</a>
         <a href="campaigns.html">Campaigns</a>
-        <a href="integrations.html">Integrations</a>
         <a href="production.html">Production</a>
         <a href="architecture.html">Architecture</a>
       </div>
@@ -66,10 +65,9 @@
     <a href="../index.html">Home</a>
     <a href="quickstart.html">Quickstart</a>
     <a href="install.html">Install</a>
-    <a href="api.html" class="active">API Reference</a>
+    <a href="api.html">API Reference</a>
     <a href="events.html">Event Types</a>
     <a href="campaigns.html">Campaigns</a>
-    <a href="integrations.html">Integrations</a>
     <a href="production.html">Production</a>
     <a href="architecture.html">Architecture</a>
   </nav>
@@ -92,7 +90,7 @@
     <div class="sidebar-group">
       <div class="sidebar-heading">Reference</div>
       <nav class="sidebar-nav">
-        <a href="api.html" class="active">
+        <a href="api.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
           API Reference
         </a>
@@ -100,7 +98,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           Event Types
         </a>
-        <a href="campaigns.html">
+        <a href="campaigns.html" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
           Campaigns
         </a>
@@ -127,108 +125,95 @@
     <div class="breadcrumbs">
       <a href="../index.html">Docs</a>
       <span class="sep">/</span>
-      <span>API Reference</span>
+      <span>Integrations</span>
     </div>
 
     <div class="page-header">
-      <h1>API Reference</h1>
-      <p>Five endpoints. Everything a business system needs to reach its customers by voice.</p>
+      <h1>Integrations</h1>
+      <p>Five surfaces, one contract: if your system can make an HTTP request, it can place phone calls. No per-platform plugins to maintain — the webhook IS the integration.</p>
     </div>
 
-    <h2 id="post-events"><span class="badge-method post">POST</span> /api/events</h2>
-    <p>The product. Fire one event; callhook handles all phone communication for it.</p>
-    
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>id</code></td><td><span class="type-chip req">string · required</span></td><td>Unique event id — also the idempotency key (unless <code>idempotency_key</code> is set). Duplicate ids never call twice.</td></tr>
-          <tr><td><code>type</code></td><td><span class="type-chip req">string · required</span></td><td>Event type — see <a href="events.html">Events</a> and <a href="campaigns.html">Campaigns</a>.</td></tr>
-          <tr><td><code>customer_id</code></td><td><span class="type-chip req">string · required</span></td><td>Resolves the customer record from the business store; binds the whole session to one customer.</td></tr>
-          <tr><td><code>phone</code></td><td><span class="type-chip">string</span></td><td>E.164 override. Defaults to the customer's stored number.</td></tr>
-          <tr><td><code>tz</code></td><td><span class="type-chip">string</span></td><td>IANA timezone override (e.g. <code>Asia/Kolkata</code>) for the calling-hours check. Defaults by region.</td></tr>
-          <tr><td><code>payload</code></td><td><span class="type-chip">object</span></td><td>Event-type-specific data (invoice refs, warning reasons, offer details).</td></tr>
-          <tr><td><code>callback_url</code></td><td><span class="type-chip">string</span></td><td>Where the terminal outcome is POSTed. Strongly recommended — this closes the loop.</td></tr>
-          <tr><td><code>not_before</code></td><td><span class="type-chip">string · RFC3339</span></td><td>Park the call until this time. Window rules still apply after it.</td></tr>
-        </tbody>
-      </table>
+    <h2 id="webhooks">1. Webhooks in — any system, zero plugins</h2>
+    <p>Every automation platform on earth can POST a webhook: Stripe, Shopify, n8n, Zapier, Make, IFTTT, GitHub Actions, cron + curl, your own backend. Point them all at one endpoint:</p>
+    <pre><code>POST https://your-callhook.example.com/api/events
+Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;
+
+{
+  <span class="st">"id"</span>: <span class="st">"evt_stripe_8472"</span>,          <span class="cm">// your idempotency key — replays never double-dial</span>
+  <span class="st">"type"</span>: <span class="st">"payment.failed"</span>,
+  <span class="st">"customer_id"</span>: <span class="st">"cus_2003"</span>,
+  <span class="st">"callback_url"</span>: <span class="st">"https://your-app.example.com/hooks/callhook"</span>,
+  <span class="st">"payload"</span>: { <span class="st">"amount"</span>: <span class="st">"the monthly charge"</span>, <span class="st">"reason"</span>: <span class="st">"card declined"</span> }
+}</code></pre>
+    <p>Typical wiring: <strong>Stripe</strong> → failed-payment webhook → callhook <code>payment.failed</code>. <strong>Shopify</strong> → fulfillment event → <code>delivery.window</code>. <strong>Your CRM</strong> → overdue job → <code>invoice.due</code>. <strong>Calendly-style bookings</strong> → <code>appointment.reminder</code> with <code>not_before</code>.</p>
+
+    <h2 id="callbacks">2. Outcome callbacks — the loop closes</h2>
+    <p>When each call finishes, the structured outcome POSTs back to your <code>callback_url</code>:</p>
+    <pre><code>{
+  <span class="st">"event_id"</span>:   <span class="st">"evt_stripe_8472"</span>,
+  <span class="st">"outcome"</span>:    { <span class="st">"outcome"</span>: <span class="st">"payment_promised"</span>, <span class="st">"promise_date"</span>: <span class="st">"2026-09-12"</span> },
+  <span class="st">"actions"</span>:    [<span class="st">"write.mark_promise(...)"</span>],
+  <span class="st">"confidence"</span>: { <span class="st">"score"</span>: 0.93, <span class="st">"label"</span>: <span class="st">"high"</span> },
+  <span class="st">"transcript"</span>:  [ ... ]
+}</code></pre>
+    <p>Your system updates its own records — the conversation's result lands where your business logic lives. Verify authenticity with the shared <code>X-Callhook-Secret</code> header pattern on your side, and dedupe by <code>event_id</code> (we deliver once; redeliveries carry the same id).</p>
+
+    <h2 id="mcp">3. MCP — AI agents operate the voice channel</h2>
+    <p>Point any MCP client (Claude Code, Cursor, agents) at <code>POST /mcp</code>. Six tools: <code>fire_event</code>, <code>launch_campaign</code>, <code>get_campaign</code>, <code>list_sessions</code>, <code>list_event_types</code>, <code>run_demo</code>.</p>
+    <pre><code><span class="cm"># Claude Code / any MCP client:</span>
+&gt; "Collect 5 payment promises from the overdue list"
+→ agent calls launch_campaign → waves fire → early-stop at the goal</code></pre>
+
+    <h2 id="adapters">4. business.Store — your CRM/billing adapter</h2>
+    <p>The mock store ships for demos; production implements one interface against your real systems — customers, invoices, promises, escalations, contact history. Read tools feed the call context; writes land only from structured outcomes, policy-gated and audit-logged.</p>
+    <pre><code><span class="kw">type</span> Store <span class="kw">interface</span> {
+    GetCustomer(id <span class="kw">string</span>) (*Customer, error)
+    GetOpenInvoice(customerID <span class="kw">string</span>) (*Invoice, error)
+    ListOverdueCustomers() ([]*Customer, error)   <span class="cm">// campaign auto-audiences</span>
+    MarkPromise(customerID, invoiceID <span class="kw">string</span>, date time.Time) error
+    Escalate(customerID, reason <span class="kw">string</span>) error
+    RecordContact(customerID, channel, outcome <span class="kw">string</span>) error
+}</code></pre>
+
+    <h2 id="sse">5. SSE stream — live in your own tooling</h2>
+    <p><code>GET /api/stream</code> pushes every session and campaign mutation as Server-Sent Events — wire your own dashboards, alerting, or analytics to the live feed.</p>
+
+    <div class="callout">
+      <div class="callout-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      </div>
+      <div>
+        <b>Why no per-platform plugins?</b> Every "Stripe integration" is the same POST with different field names. callhook's event schema is the universal adapter — one endpoint, idempotency built in, and every automation tool already speaks it. New platform? It's a curl command, not a codebase.
+      </div>
     </div>
-    <p>Responses: <code>202 {"status":"call_placed"}</code> · <code>202 {"status":"scheduled"}</code> (not_before) · <code>202 {"status":"deferred"}</code> (outside calling hours) · <code>200 {"status":"duplicate"}</code>.</p>
-
-    <h2 id="post-batch"><span class="badge-method post">POST</span> /api/events/batch</h2>
-    <p>Fire many events at once. Each is processed independently — one bad event never sinks the batch.</p>
-    <pre><code>{ <span class="st">"events"</span>: [ { <span class="st">"id"</span>: <span class="st">"evt_1"</span>, <span class="st">"type"</span>: <span class="st">"invoice.due"</span>, <span class="st">"customer_id"</span>: <span class="st">"cus_1002"</span> }, ... ] }
-
-<span class="cm"># → {"results":[{"session_id":"evt_1","status":"call_placed",...}, ...]}</span></code></pre>
-
-    <h2 id="post-webhook"><span class="badge-method post">POST</span> /callhook/webhook</h2>
-    <p>CALL-E's terminal results land here (set <code>CALLHOOK_PUBLIC_URL</code> so CALL-E can reach you). Requires the <code>X-Callhook-Secret</code> header when <code>CALLHOOK_WEBHOOK_SECRET</code> is configured — forged terminal results are rejected. You normally never call this yourself.</p>
-
-    <h2 id="mcp"><span class="badge-method post">POST</span> /mcp</h2>
-  <p>The <a href="../index.html">MCP server</a> — callhook as agent tools (Streamable HTTP, JSON-RPC 2.0). Tools: <code>fire_event</code>, <code>launch_campaign</code>, <code>get_campaign</code>, <code>list_sessions</code>, <code>list_event_types</code>, <code>run_demo</code>. Point any MCP client here.</p>
-
-  <h2 id="stream"><span class="badge-method get">GET</span> /api/stream</h2>
-  <p>Server-Sent Events: <code>session</code> and <code>campaign</code> events pushed on every mutation. The war room's live updates ride this stream; polling is the fallback. With auth on, pass the token as <code>?token=</code> (EventSource cannot send headers).</p>
-
-  <h2 id="get-sessions"><span class="badge-method get">GET</span> /api/sessions</h2>
-    <p>All sessions with their state, audit trail, outcome and transcript. This is what the dashboard renders.</p>
-
-    <h2 id="get-metrics"><span class="badge-method get">GET</span> /api/metrics</h2>
-    <pre><code>{
-  <span class="st">"sessions"</span>: 42,
-  <span class="st">"by_status"</span>:  { <span class="st">"completed"</span>: 35, <span class="st">"failed"</span>: 2, <span class="st">"intake"</span>: 5 },
-  <span class="st">"by_outcome"</span>: { <span class="st">"payment_promised"</span>: 18, <span class="st">"no_answer"</span>: 7, ... },
-  <span class="st">"retries_armed"</span>: 3
-}</code></pre>
-
-    <h2 id="get-health"><span class="badge-method get">GET</span> /api/health</h2>
-    <p>Uptime probe — also the quickest way to check your configuration at a glance.</p>
-    <pre><code>{
-  <span class="st">"ok"</span>: true,
-  <span class="st">"dry_run"</span>: true,           <span class="cm">// no CALLHOOK_API_KEY</span>
-  <span class="st">"windows_enforced"</span>: true,
-  <span class="st">"auth_intake"</span>: false,      <span class="cm">// CALLHOOK_INTAKE_TOKEN unset</span>
-  <span class="st">"auth_webhook"</span>: false
-}</code></pre>
-
-    <h2 id="auth">Authentication</h2>
-    <p>When <code>CALLHOOK_INTAKE_TOKEN</code> is set, both intake endpoints require it:</p>
-    <pre><code>Authorization: Bearer &lt;CALLHOOK_INTAKE_TOKEN&gt;</code></pre>
-    <p>Point callhook at your real business data by implementing the <code>business.Store</code> interface (customers, invoices, promises, escalations) — see <a href="architecture.html">Architecture</a>.</p>
 
     <div class="prevnext">
-      <a href="quickstart.html" class="prevnext-card">
+      <a href="campaigns.html" class="prevnext-card">
         <span class="direction">← Previous</span>
-        <span class="title">Quickstart</span>
+        <span class="title">Campaigns</span>
       </a>
-      <a href="events.html" class="prevnext-card next">
+      <a href="production.html" class="prevnext-card next">
         <span class="direction">Next →</span>
-        <span class="title">Event Types</span>
+        <span class="title">Production</span>
       </a>
     </div>
   </main>
 
-  <!-- Right On This Page TOC -->
   <aside class="docs-toc">
-    <div class="toc-title">On this page</div>
-    <ul class="toc-list">
-      <li><a href="#post-events" class="toc-link">POST /api/events</a></li>
-      <li><a href="#post-batch" class="toc-link">POST /api/events/batch</a></li>
-      <li><a href="#post-webhook" class="toc-link">POST /callhook/webhook</a></li>
-      <li><a href="#get-sessions" class="toc-link">GET /api/sessions</a></li>
-      <li><a href="#get-metrics" class="toc-link">GET /api/metrics</a></li>
-      <li><a href="#get-health" class="toc-link">GET /api/health</a></li>
-      <li><a href="#auth" class="toc-link">Authentication</a></li>
-    </ul>
-
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#webhooks" class="toc-link">Webhooks in</a></li>
+        <li><a href="#callbacks" class="toc-link">Outcome callbacks</a></li>
+        <li><a href="#mcp" class="toc-link">MCP</a></li>
+        <li><a href="#adapters" class="toc-link">Store adapters</a></li>
+        <li><a href="#sse" class="toc-link">SSE stream</a></li>
+      </ul>
     <div class="toc-utilities">
-      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/api.html" target="_blank" rel="noopener" class="toc-util-link">
+      <a href="https://github.com/iSundram/callhook/blob/main/docs-site/pages/integrations.html" target="_blank" rel="noopener" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         Edit on GitHub
       </a>
-      <a href="#post-events" class="toc-util-link">
+      <a href="#webhooks" class="toc-util-link">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
         Back to top
       </a>

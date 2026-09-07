@@ -23,6 +23,7 @@
         <a href="pages/api.html">API</a>
         <a href="pages/events.html">Events</a>
         <a href="pages/campaigns.html">Campaigns</a>
+        <a href="pages/integrations.html">Integrations</a>
         <a href="pages/production.html">Production</a>
         <a href="pages/architecture.html">Architecture</a>
       </div>
@@ -65,9 +66,11 @@
   <nav class="sidebar-nav">
     <a href="index.html" class="active">Home</a>
     <a href="pages/quickstart.html">Quickstart</a>
-        <a href="pages/install.html">Install</a>
+    <a href="pages/install.html">Install</a>
     <a href="pages/api.html">API Reference</a>
     <a href="pages/events.html">Event Types</a>
+    <a href="pages/campaigns.html">Campaigns</a>
+    <a href="pages/integrations.html">Integrations</a>
     <a href="pages/production.html">Production</a>
     <a href="pages/architecture.html">Architecture</a>
   </nav>
@@ -87,6 +90,8 @@
       <span class="badge"><b>0</b> dependencies</span>
       <span class="badge">self-hosted</span>
       <span class="badge"><b>+</b> goal-driven campaigns</span>
+      <span class="badge"><b>8</b> event types</span>
+      <span class="badge">MCP server</span>
       <span class="badge">MIT</span>
     </div>
     <div class="cta-row">
@@ -203,6 +208,9 @@ $ ./callhook/callhook_linux_amd64/callhook
 
   <h2 id="campaigns">Campaigns: declare a goal, not a dial list</h2>
   <p>Fire one webhook per call — or declare a <strong>goal</strong> and let callhook run the waves: <em>"collect 5 payment promises from the overdue list."</em> Waves launch, unanswered customers are requeued, and the campaign <strong>stops the moment the goal is met</strong> — everyone not yet called is skipped, the budget stays unspent. <a href="pages/campaigns.html">See campaigns →</a></p>
+
+  <h2 id="integrations">Integrate anything that can POST</h2>
+  <p>Stripe, Shopify, n8n, Zapier, cron + curl — one webhook endpoint with idempotency built in. Structured outcomes POST back; AI agents drive it over MCP; your CRM plugs in via one interface. <a href="pages/integrations.html">Integrations →</a></p>
 
   <h2 id="first-event">Fire your first event</h2>
   <pre><code><span class="cm"># start callhook (dry-run: no API key, no real calls, no balance)</span>

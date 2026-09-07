@@ -216,6 +216,16 @@
     { title: 'Campaigns: Verified E2E result', cat: 'Campaigns', url: '/pages/campaigns.html#verified' },
     { title: 'Campaign API endpoints', cat: 'Campaigns', url: '/pages/campaigns.html#api' },
 
+    { title: 'Integrations: Webhooks in', cat: 'Integrations', url: '/pages/integrations.html#webhooks' },
+    { title: 'Integrations: Outcome callbacks', cat: 'Integrations', url: '/pages/integrations.html#callbacks' },
+    { title: 'Integrations: MCP agents', cat: 'Integrations', url: '/pages/integrations.html#mcp' },
+    { title: 'Integrations: business.Store adapters', cat: 'Integrations', url: '/pages/integrations.html#adapters' },
+    { title: 'Event Blueprint: delivery.window', cat: 'Events', url: '/pages/events.html#delivery-window' },
+    { title: 'Event Blueprint: appointment.reminder', cat: 'Events', url: '/pages/events.html#appointment-reminder' },
+    { title: 'Event Blueprint: payment.failed', cat: 'Events', url: '/pages/events.html#payment-failed' },
+    { title: 'Event Blueprint: subscription.expiring', cat: 'Events', url: '/pages/events.html#subscription-expiring' },
+    { title: 'Event Blueprint: feedback.request', cat: 'Events', url: '/pages/events.html#feedback-request' },
+
     { title: 'Event Blueprint: invoice.due', cat: 'Events', url: '/pages/events.html#invoice-due' },
     { title: 'Event Blueprint: account.warning', cat: 'Events', url: '/pages/events.html#account-warning' },
     { title: 'Event Blueprint: promo.offer', cat: 'Events', url: '/pages/events.html#promo-offer' },

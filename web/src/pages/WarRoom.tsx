@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { timeAgo } from '../lib/format'
 import { useState } from 'react'
 import { OutcomeBadge } from '../components/domain/shared'
+import { EVENT_TYPES } from '../lib/events'
 
 export default function WarRoom() {
   const { baseUrl, token } = useAuth()
@@ -21,9 +22,16 @@ export default function WarRoom() {
   async function runDemo() {
     setDemoBusy(true)
     try {
-      await api.fire(conn, { id: `demo_evt_${Date.now()}`, type: 'invoice.due', customer_id: 'cus_1002' })
-      await api.fire(conn, { id: `demo_evt_${Date.now()+1}`, type: 'account.warning', customer_id: 'cus_1003', payload: { reason: 'login from a new country', detail: 'A sign-in from Singapore was detected.' } })
-      await api.fire(conn, { id: `demo_evt_${Date.now()+2}`, type: 'promo.offer', customer_id: 'cus_1001', payload: { offer: '20% off your next invoice', expires: 'end of this week' } })
+      // Fire one event of each type across the demo customers.
+      const customers = ['cus_1001', 'cus_1002', 'cus_1003']
+      for (let i = 0; i < EVENT_TYPES.length; i++) {
+        await api.fire(conn, {
+          id: `demo_evt_${Date.now()}_${i}`,
+          type: EVENT_TYPES[i].type,
+          customer_id: customers[i % customers.length],
+          payload: EVENT_TYPES[i].demo,
+        })
+      }
       await api.createCampaign(conn, {
         name: 'Demo campaign — September collections',
         event_type: 'invoice.due',
@@ -88,7 +96,7 @@ export default function WarRoom() {
               <button className="btn primary" style={{ marginTop: 14 }} disabled={demoBusy} onClick={runDemo}>
                 {demoBusy ? 'Running…' : 'Run the demo'}
               </button>
-              <p className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>fires 3 events + launches a campaign (dry-run, free)</p>
+              <p className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>fires one event of each type + launches a campaign (dry-run, free)</p>
             </div>
           )}
           {recent.map(s => (
