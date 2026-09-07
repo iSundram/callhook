@@ -24,6 +24,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const normalized = url.replace(/\/$/, '')
     const h = await api.health({ baseUrl: normalized, token: tok })
     if (!h.ok) throw new Error('server responded but not healthy')
+    // Prove the token against a protected endpoint: /api/metrics requires
+    // intake auth, so a wrong/empty token fails HERE with a clear message
+    // instead of failing silently on every later action.
+    if (h.auth_intake) {
+      try {
+        await api.metrics({ baseUrl: normalized, token: tok })
+      } catch {
+        throw new Error('this server requires a token (CALLHOOK_INTAKE_TOKEN) — yours was rejected')
+      }
+    }
     localStorage.setItem('ch_baseurl', normalized)
     localStorage.setItem('ch_token', tok)
     setBaseUrl(normalized)

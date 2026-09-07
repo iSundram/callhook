@@ -13,7 +13,7 @@ export default function WarRoom() {
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
 
-  const { data: metrics } = usePolling(() => api.metrics(conn), 2000)
+  const { data: metrics, error: metricsErr } = usePolling(() => api.metrics(conn), 2000)
   const { data: sessions } = usePolling(() => api.sessions(conn), 2000)
   const { data: campaigns } = usePolling(() => api.campaigns(conn), 3000)
 
@@ -60,6 +60,16 @@ export default function WarRoom() {
         <h1>War Room</h1>
         <p>Everything happening on your voice channel, right now.</p>
       </div>
+
+      {metricsErr && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'rgba(252,165,165,.3)' }}>
+          <div className="pill err" style={{ display: 'inline-block' }}>{metricsErr}</div>
+          <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
+            Live stats can't load — the session token was rejected or the server is unreachable.
+            Click <b>Disconnect</b>, then reconnect with the server's <span className="mono">CALLHOOK_INTAKE_TOKEN</span>.
+          </p>
+        </div>
+      )}
 
       <div className="stat-grid">
         <div className="card stat">

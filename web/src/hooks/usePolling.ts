@@ -32,7 +32,20 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
           setError(null)
         }
       } catch (e: any) {
-        if (alive) setError(e.message || 'request failed')
+        if (!alive) return
+        const msg = e.message || 'request failed'
+        setError(msg)
+        // Auth lost (token rejected/rotated server-side): drop the saved
+        // session so the Connect screen reappears with the reason, instead
+        // of every view silently showing placeholders.
+        if (msg.includes('bearer') || msg.includes('401') || msg.includes('Unauthorized')) {
+          try {
+            localStorage.removeItem('ch_baseurl')
+            localStorage.removeItem('ch_token')
+          } catch { /* storage restrictions */ }
+          window.location.hash = ''
+          window.location.reload()
+        }
       } finally {
         if (alive) timer = setTimeout(tick, intervalMs)
       }
