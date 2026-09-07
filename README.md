@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="assets/icon-tight.svg" width="110" alt="Callhook logo" />
+  <img src="assets/logo-full.svg" width="340" alt="callhook" />
 </p>
-
-<h1 align="center">callhook</h1>
 
 <p align="center"><em>Fire a webhook. Your customer's phone rings.</em></p>
 
