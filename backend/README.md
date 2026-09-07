@@ -5,7 +5,7 @@ built on the [CALL-E](https://heycall-e.com) Developer API. Single Go binary,
 zero external dependencies.
 
 ```
-webhook in ──► router ──► prefetch ──► CALL-E call ──► 📞 customer
+webhook in ──► router ──► prefetch ──► CALL-E call ──► customer
                   │
    outcome engine ◄── terminal webhook
                   ├── policy gate: certain → write · uncertain → escalate

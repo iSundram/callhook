@@ -148,7 +148,7 @@ retries: redial after 2h, up to 2 retries | windows: true</code></pre>
     <p>No <code>CALLHOOK_API_KEY</code>? callhook runs in <strong>dry-run mode</strong>: the whole pipeline executes — events, prefetch, retry policy, outcome engine, dashboard — but calls are fabricated locally. Perfect for development, zero cost.</p>
 
     <h2 id="watch-dashboard">2. Watch the dashboard</h2>
-    <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>⚡ fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
+    <p>Open <span class="mono">http://localhost:8080/</span>. Use the <strong>fire</strong> buttons to trigger demo events and watch the pipeline live: event → prefetch → call → outcome → actions → transcript.</p>
 
     <h2 id="fire-real-event">3. Fire a real event</h2>
     <pre><code>$ curl -X POST localhost:8080/api/events -H 'Content-Type: application/json' -d '{

@@ -54,7 +54,7 @@ curl -X POST localhost:8080/api/campaigns -d '{
 > and a full audit trail included.
 
 ```
-business app ──POST /api/events──► callhook ──CALL-E API──► 📞 customer
+business app ──POST /api/events──► callhook ──CALL-E API──► customer
      ▲                                │
      └── outcome webhook ◄────────────┘
          {outcome, promise_date, actions, transcript, confidence}
