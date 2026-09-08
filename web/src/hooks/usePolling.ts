@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { onLiveEvent } from '../lib/live'
+import { onLiveEvent, isLiveConnected } from '../lib/live'
 
 // usePolling — fetch on an interval with the previous value kept during
 // refetches (no flicker). The workhorse behind every live view.
@@ -8,6 +8,10 @@ import { onLiveEvent } from '../lib/live'
 // `stale` flips true — views swap the data area for shimmer ghosts.
 // Fast refreshes (the common case) never show it.
 export const STALE_GRACE_MS = 400
+
+// When the SSE stream is open, mutations arrive pushed and the poll is only
+// a heartbeat; if it drops, return to the tight fallback interval.
+const HEARTBEAT_MS = 20_000
 
 export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled = true) {
   const [data, setData] = useState<T | null>(null)
@@ -59,7 +63,8 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
         if (graceTimer) clearTimeout(graceTimer)
         if (alive) {
           setStale(false)
-          timer = setTimeout(tick, intervalMs)
+          const next = isLiveConnected() ? Math.max(intervalMs, HEARTBEAT_MS) : intervalMs
+          timer = setTimeout(tick, next)
         }
       }
     }
