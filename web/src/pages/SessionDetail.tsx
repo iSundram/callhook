@@ -9,7 +9,37 @@ export default function SessionDetail() {
   const { id } = useParams()
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
-  const { data: sessions } = usePolling(() => api.sessions(conn), 2000)
+  const { data: sessions, error } = usePolling(() => api.sessions(conn), 2000)
+
+  if (sessions === null && !error) {
+    return (
+      <div aria-busy="true">
+        <div className="page-header">
+          <div className="skeleton" style={{ height: 28, width: '30%', marginBottom: 8 }} />
+          <div className="skeleton" style={{ height: 16, width: '20%' }} />
+        </div>
+        <div className="stat-grid">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="card stat">
+              <div className="skeleton" style={{ height: 12, width: '40%', marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 22, width: '30%' }} />
+            </div>
+          ))}
+        </div>
+        <div className="grid2" style={{ marginTop: 16 }}>
+          <div className="card">
+            <div className="skeleton" style={{ height: 16, width: '30%', marginBottom: 14 }} />
+            <div className="skeleton" style={{ height: 120, width: '100%' }} />
+          </div>
+          <div className="card">
+            <div className="skeleton" style={{ height: 16, width: '30%', marginBottom: 14 }} />
+            <div className="skeleton" style={{ height: 120, width: '100%' }} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const s = (sessions || []).find(x => x.id === id)
 
   if (!s) {

@@ -50,7 +50,7 @@ export default function WarRoom() {
   const recent = (sessions || []).slice(0, 8)
   const running = (campaigns || []).filter(c => c.status === 'running')
   const inFlight = metrics?.by_status?.in_progress || 0
-  const outcomes: [string, number][] = metrics
+  const outcomes: [string, number][] = metrics?.by_outcome
     ? (Object.entries(metrics.by_outcome) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 4)
     : []
 

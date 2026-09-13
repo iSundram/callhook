@@ -16,8 +16,8 @@ const ENV_DOCS: [string, string, string][] = [
 ]
 
 export default function Settings() {
-  const { health, baseUrl, token, disconnect } = useAuth()
-  usePolling(async () => null, 60000) // keep mounted timer
+  const { health, baseUrl, token, disconnect, refreshHealth } = useAuth()
+  usePolling(refreshHealth, 30000)
 
   return (
     <div>
@@ -33,10 +33,10 @@ export default function Settings() {
             {[
               ['Server', baseUrl || '—'],
               ['Token', token ? '••••••••' : '(none)'],
-              ['Mode', health?.dry_run ? 'DRY-RUN (no real calls)' : 'LIVE'],
-              ['Windows', health?.windows_enforced ? 'enforced (9–20h local, weekdays)' : 'disabled'],
-              ['Intake auth', health?.auth_intake ? 'required' : 'open'],
-              ['Webhook auth', health?.auth_webhook ? 'required' : 'open'],
+              ['Mode', health ? (health.dry_run ? 'DRY-RUN (no real calls)' : 'LIVE') : 'checking…'],
+              ['Windows', health ? (health.windows_enforced ? 'enforced (9–20h local, weekdays)' : 'disabled') : 'checking…'],
+              ['Intake auth', health ? (health.auth_intake ? 'required' : 'open') : 'checking…'],
+              ['Webhook auth', health ? (health.auth_webhook ? 'required' : 'open') : 'checking…'],
             ].map(([k, v]) => (
               <div key={k as string} className="spread" style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                 <span className="muted">{k}</span>

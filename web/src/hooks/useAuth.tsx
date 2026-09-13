@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import type { Health } from '../lib/types'
 import { api } from '../lib/api'
 
@@ -7,6 +7,7 @@ type AuthCtx = {
   token: string
   health: Health | null
   connected: boolean
+  connecting: boolean
   connect: (baseUrl: string, token: string) => Promise<void>
   disconnect: () => void
   refreshHealth: () => Promise<void>
@@ -19,6 +20,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState(() => localStorage.getItem('ch_token') || '')
   const [health, setHealth] = useState<Health | null>(null)
   const [connected, setConnected] = useState(false)
+  const [connecting, setConnecting] = useState(() => Boolean(localStorage.getItem('ch_baseurl')))
+
+  useEffect(() => {
+    const savedUrl = localStorage.getItem('ch_baseurl')
+    const savedToken = localStorage.getItem('ch_token') || ''
+    if (savedUrl) {
+      connect(savedUrl, savedToken)
+        .catch(() => {
+          // If auto-connect fails, allow manual reconnect on Connect screen
+        })
+        .finally(() => {
+          setConnecting(false)
+        })
+    }
+  }, [])
 
   async function connect(url: string, tok: string) {
     const normalized = url.replace(/\/$/, '')
@@ -60,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ baseUrl, token, health, connected, connect, disconnect, refreshHealth }}>
+    <Ctx.Provider value={{ baseUrl, token, health, connected, connecting, connect, disconnect, refreshHealth }}>
       {children}
     </Ctx.Provider>
   )

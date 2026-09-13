@@ -22,7 +22,7 @@ export default function Integrations() {
         <p>Point any platform's webhook at callhook — one endpoint, verified signatures, intelligent calls out.</p>
       </div>
 
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="stat-grid">
         <div className="card stat">
           <div className="label">Platforms</div>
           <div className="value">{list.length}</div>

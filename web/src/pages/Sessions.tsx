@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
@@ -7,6 +7,7 @@ import { timeAgo } from '../lib/format'
 import { OutcomeBadge, StatusPill } from '../components/domain/shared'
 
 export default function Sessions() {
+  const navigate = useNavigate()
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
   const { data: sessions, stale: sessionsStale } = usePolling(() => api.sessions(conn), 2000)
@@ -16,7 +17,7 @@ export default function Sessions() {
   const filtered = (sessions || []).filter(s => {
     if (status && (s.call_status || 'intake') !== status) return false
     if (!q) return true
-    const hay = `${s.customer} ${s.customer_id} ${s.event_type} ${s.phone} ${s.id} ${s.outcome?.outcome || ''}`.toLowerCase()
+    const hay = `${s.customer || ''} ${s.customer_id || ''} ${s.event_type || ''} ${s.phone || ''} ${s.id || ''} ${s.outcome?.outcome || ''}`.toLowerCase()
     return hay.includes(q.toLowerCase())
   })
 
@@ -61,7 +62,7 @@ export default function Sessions() {
             </thead>
             <tbody>
               {filtered.map(s => (
-                <tr key={s.id} onClick={() => window.location.href = `#/sessions/${s.id}`}>
+                <tr key={s.id} onClick={() => navigate(`/sessions/${s.id}`)}>
                   <td>
                     <Link to={`/sessions/${s.id}`} onClick={e => e.stopPropagation()}>
                       <strong>{s.customer || s.customer_id}</strong>

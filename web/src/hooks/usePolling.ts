@@ -32,10 +32,18 @@ export function usePolling<T>(fn: () => Promise<T>, intervalMs: number, enabled 
 
   useEffect(() => {
     if (!enabled) return
+    let alive = true
     const off = onLiveEvent(() => {
-      fnRef.current().then(setData).catch(() => {})
+      fnRef.current()
+        .then(v => {
+          if (alive) setData(v)
+        })
+        .catch(() => {})
     })
-    return off
+    return () => {
+      alive = false
+      off()
+    }
   }, [enabled])
 
   useEffect(() => {

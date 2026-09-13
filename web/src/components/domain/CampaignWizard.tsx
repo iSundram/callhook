@@ -65,11 +65,11 @@ export default function CampaignWizard({ onCreated }: { onCreated: (c: any) => v
         goal: {
           type: form.goal_type,
           success_outcomes: [form.success],
-          ...(form.goal_type === 'count' ? { target: Number(form.target) } : {}),
+          ...(form.goal_type === 'count' ? { target: Number(form.target) || 1 } : {}),
         },
         audience_source: form.audience_source,
-        waves: { size: Number(form.size), delay: form.delay, max_waves: Number(form.max_waves) },
-        budget: { max_calls: Number(form.max_calls) },
+        waves: { size: Number(form.size) || 1, delay: form.delay, max_waves: Number(form.max_waves) || 1 },
+        budget: { max_calls: Number(form.max_calls) || 1 },
       }
       const c = await api.createCampaign(conn, body)
       setOpen(false)

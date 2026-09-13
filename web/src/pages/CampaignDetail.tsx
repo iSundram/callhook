@@ -12,18 +12,56 @@ export default function CampaignDetail() {
   const { id } = useParams()
   const { baseUrl, token } = useAuth()
   const conn = { baseUrl, token }
-  const { data: c } = usePolling(() => api.campaign(conn, id!), 2000)
+  const { data: c, error } = usePolling(() => api.campaign(conn, id!), 2000)
 
-  if (!c) return <div className="empty">campaign not found</div>
+  async function stop() {
+    if (!c) return
+    if (!confirm('Stop this campaign? Remaining pending audience will be skipped.')) return
+    try {
+      await api.stopCampaign(conn, c.id)
+    } catch (e: any) {
+      alert(e.message || 'Failed to stop campaign')
+    }
+  }
+
+  if (c === null && !error) {
+    return (
+      <div aria-busy="true">
+        <div className="page-header">
+          <div className="skeleton" style={{ height: 28, width: '40%', marginBottom: 8 }} />
+          <div className="skeleton" style={{ height: 16, width: '25%' }} />
+        </div>
+        <div className="card" style={{ marginBottom: 18 }}>
+          <div className="skeleton" style={{ height: 20, width: '35%', marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 12, width: '100%', marginBottom: 14 }} />
+          <div className="skeleton" style={{ height: 16, width: '50%' }} />
+        </div>
+        <div className="stat-grid">
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} className="card stat">
+              <div className="skeleton" style={{ height: 12, width: '50%', marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 24, width: '35%' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!c) {
+    return (
+      <div>
+        <div className="empty">
+          campaign not found<br />
+          <Link to="/campaigns" className="btn sm" style={{ marginTop: 14, display: 'inline-block' }}>← all campaigns</Link>
+        </div>
+      </div>
+    )
+  }
 
   const target = c.goal.type === 'count' ? c.goal.target : c.audience.length
   const pct = target ? Math.min(100, Math.round(100 * c.progress.successes / target)) : 0
   const budgetPct = c.budget.max_calls ? Math.min(100, Math.round(100 * c.progress.calls_placed / c.budget.max_calls)) : 0
-
-  async function stop() {
-    if (!confirm('Stop this campaign? Remaining pending audience will be skipped.')) return
-    await api.stopCampaign(conn, c.id)
-  }
 
   return (
     <div>

@@ -258,6 +258,10 @@ the full war room (dry-run mode: real pipeline, fabricated calls, zero
 balance). Connect, then hit **Run the demo**: one event of each of the 8
 types + a goal-driven campaign with early-stop, live.
 
+**How it was built:** design decisions, the integration methodology, the
+UX iterations and the honest mistakes log live in
+[Projectstory.md](Projectstory.md).
+
 ## License
 
 MIT

@@ -1,7 +1,10 @@
 // Formatting helpers.
 
-export function timeAgo(iso: string): string {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+export function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const t = new Date(iso).getTime()
+  if (isNaN(t)) return '—'
+  const s = Math.floor((Date.now() - t) / 1000)
   if (s < 5) return 'just now'
   if (s < 60) return `${s}s ago`
   if (s < 3600) return `${Math.floor(s / 60)}m ago`
@@ -9,8 +12,11 @@ export function timeAgo(iso: string): string {
   return `${Math.floor(s / 86400)}d ago`
 }
 
-export function clock(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+export function clock(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 export const OUTCOME_TONE: Record<string, string> = {

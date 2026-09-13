@@ -208,8 +208,21 @@ a:hover { color: #ffffff; }
 
 /* ---------- misc ---------- */
 .empty { text-align: center; color: var(--text-faint); padding: 60px 0; font-size: 13.5px; }
-.skeleton { background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-hover) 50%, var(--bg-elevated) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md); }
-@keyframes shimmer { to { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    rgba(152, 134, 134, 0.22) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: var(--radius-md);
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .sidebar { display: none; } }
 pre.code {
@@ -277,6 +290,6 @@ pre.code {
   0%   { left: -35%; }   /* segment enters from off-left */
   100% { left: 105%; }   /* exits fully right, then repeats */
 }
-/* Content recedes (never hides) while loading. */
-.dimmed { opacity: .45; filter: saturate(.6); pointer-events: none;
+/* Content recedes slightly while loading without blocking interactions. */
+.dimmed { opacity: .75; filter: saturate(.85);
   transition: opacity .2s ease, filter .2s ease; }

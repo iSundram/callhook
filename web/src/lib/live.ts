@@ -1,7 +1,6 @@
 // live.ts — SSE subscription to /api/stream. Session and campaign mutations
 // arrive as they happen; usePolling refetches instantly on each event and
 // keeps interval polling as the fallback (and for initial load).
-import { useAuth } from '../hooks/useAuth'
 
 type Listener = (event: string) => void
 

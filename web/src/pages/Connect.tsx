@@ -4,9 +4,13 @@ import { DocsHint } from '../components/domain/DocsHint'
 import { DOCS } from '../lib/docs'
 
 export default function Connect() {
-  const { connect } = useAuth()
-  const [baseUrl, setBaseUrl] = useState(window.location.origin.startsWith('http') && !window.location.origin.includes('5173') ? window.location.origin : 'http://localhost:8080')
-  const [token, setToken] = useState('')
+  const { connect, baseUrl: authUrl, token: authTok, connecting } = useAuth()
+  const [baseUrl, setBaseUrl] = useState(() =>
+    authUrl ||
+    localStorage.getItem('ch_baseurl') ||
+    (window.location.origin.startsWith('http') && !window.location.origin.includes('5173') ? window.location.origin : 'http://localhost:8080')
+  )
+  const [token, setToken] = useState(() => authTok || localStorage.getItem('ch_token') || '')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -46,8 +50,8 @@ export default function Connect() {
               <DocsHint label="Connection help →" url={DOCS.tsConnect} />
             </div>
           )}
-          <button className="btn primary" style={{ width: '100%' }} disabled={busy} onClick={submit}>
-            {busy ? 'Connecting…' : 'Connect'}
+          <button className="btn primary" style={{ width: '100%' }} disabled={busy || connecting} onClick={submit}>
+            {busy || connecting ? 'Connecting…' : 'Connect'}
           </button>
           <DocsHint label="New here? Read the 60-second quickstart →" url={DOCS.quickstart} small />
         </div>

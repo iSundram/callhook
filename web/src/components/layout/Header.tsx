@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePolling } from '../../hooks/usePolling'
 import { useAuth } from '../../hooks/useAuth'
 import { DocsHint } from '../domain/DocsHint'
@@ -7,10 +7,24 @@ import { DOCS } from '../../lib/docs'
 // The mode badge: dry-run is amber (attention, not alarm); live is green.
 // Clicking it explains what the mode means and how to change it.
 export default function Header({ onMenu }: { onMenu: () => void }) {
-  const { health, disconnect } = useAuth()
+  const { health, disconnect, refreshHealth } = useAuth()
   // gentle health refresh
-  usePolling(async () => null, 30000)
+  usePolling(refreshHealth, 30000)
   const [modeOpen, setModeOpen] = useState(false)
+
+  useEffect(() => {
+    if (!modeOpen) return
+    const onWindowClick = () => setModeOpen(false)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModeOpen(false)
+    }
+    window.addEventListener('click', onWindowClick)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('click', onWindowClick)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [modeOpen])
 
   return (
     <header className="hdr">
@@ -26,7 +40,10 @@ export default function Header({ onMenu }: { onMenu: () => void }) {
         {health && (
           <button
             className="pill mode-dot"
-            onClick={() => setModeOpen(o => !o)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setModeOpen(o => !o)
+            }}
             aria-label={health.dry_run ? 'Dry-run mode — click for details' : 'Live mode — click for details'}
             title={health.dry_run ? 'Dry-run — click for details' : 'Live — click for details'}
           >
