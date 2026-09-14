@@ -2,7 +2,8 @@
 
 > How a one-line idea — *"a webhook goes in, a phone call comes out"* —
 > became a single-binary product with 19 doc-verified integrations, a live
-> demo, and a documentation system that finds you when you're stuck.
+> demo, a documentation system that finds you when you're stuck — and a
+> first real phone call that connected on attempt four.
 
 ---
 
@@ -150,7 +151,65 @@ war room updates instantly rather than polling.
 
 ---
 
-## 6. The integrations saga: 19 platforms, doc-verified
+## 6. Live-fire: the first real call
+
+Dry-run proves the pipeline; only live fire proves the integration. The
+test session against the real CALL-E API — with a real phone number — is
+the part of the story no mock can tell.
+
+### 6.1 Method: read-only first, balance second
+
+The API key was validated against `GET /v1/goals` (read-only, zero
+balance) before any call was placed. Only then did testing touch the 20
+free calls the account provides.
+
+### 6.2 The carrier saga
+
+The first real call failed **instantly** with a provider `404`. The
+diagnosis came from CALL-E's own event stream (`GET /v1/calls/{id}/events`):
+the task had run — bot created, robot resolved, dial attempted — but the
+recipient was routed with `region: "US"` while the number was Indian
+(`+91…`). CALL-E routes by region; the mismatch killed the call before
+the carrier. Attempt two, correctly routed `IN`/`en-IN`, failed with a
+provider `500`; attempt three with SIP `480` (temporarily unavailable) —
+international lines into India are filtered aggressively, and CALL-E's
+own docs mark international lines as "primarily intended for testing."
+
+Attempt four **connected**. A real conversation, on a real phone:
+
+```
+AGENT: is this Priya Sharma?
+AGENT: I'm calling for your service provider to thank you for being a
+       loyal Pro plan customer since March twenty twenty-four, and to
+       offer you 20% off your next invoice, valid until the end of this
+       week; are you interested?
+USER:  Hello. No.
+AGENT: No problem at all—thanks for being a loyal Pro plan customer.
+       Take care.
+```
+
+Every rule from the blueprint was obeyed — the loyalty framing, the
+single offer, the never-push-twice exit. The structured result came back
+schema-valid (`{"outcome": "declined"}` at 0.92 confidence) and the
+terminal webhook arrived through the tunnel, was deduped, and drove the
+outcome engine. Four calls of twenty spent on the truth.
+
+### 6.3 What live fire caught that tests couldn't
+
+1. **CALL-E redelivers terminal webhooks.** The same call was processed
+   twice — a business write could have applied twice. Fix (`66846e1`):
+   dedupe by the webhook event id, exactly as their docs recommend.
+2. **Webhook payloads omit transcripts.** The full transcript exists on
+   `GET /v1/calls/{id}` but not in the webhook body. Fix (same commit):
+   the outcome engine re-fetches the call to enrich the session before
+   running actions.
+
+Both are invisible in dry-run and in mocks — they only exist in the
+contract between two real systems.
+
+---
+
+## 7. The integrations saga: 19 platforms, doc-verified
 
 This was the largest single effort, and the methodology matters more than
 the count.
@@ -230,7 +289,7 @@ time a hook fires, not after a silent week.
 
 ---
 
-## 7. Documentation as a product surface
+## 8. Documentation as a product surface
 
 Docs were never an afterthought. The insight that shaped the final
 iteration: **documentation should find you at the moment you're stuck.**
@@ -262,7 +321,7 @@ backend README · web README. Search index covers all of it.
 
 ---
 
-## 8. The war room: UX iterations
+## 9. The war room: UX iterations
 
 The frontend went through several honest iterations, each fixing a real
 observed problem:
@@ -284,7 +343,7 @@ and a bar only when *you* caused the work. Errors are loud, with the fix.
 
 ---
 
-## 9. Deployment: Render
+## 10. Deployment: Render
 
 `26f9910` made the repo Render-ready: a three-stage `Dockerfile` (node
 web build → Go embed+build → alpine runtime, non-root), a `render.yaml`
@@ -306,7 +365,7 @@ after inactivity; the first request warms in ~50s.
 
 ---
 
-## 10. Honest mistakes log
+## 11. Honest mistakes log
 
 Kept because the fixes are the story:
 
@@ -326,10 +385,21 @@ Kept because the fixes are the story:
    `t.Cleanup`.
 7. **Duplicate JSX block** during the shimmer refactor — caught by
    re-reading the file after the edit, removed.
+8. **CORS preflight returned 405** — Go's method-based routing rejected
+   `OPTIONS` before the middleware could answer it. Caught by the new
+   httptest suite; fixed by answering preflights at the router level.
+9. **`Routes()` rebuilt the rate limiter on every call** — harmless in
+   production (called once) but a footgun; routes are now cached on
+   first build.
+10. **Session store handed out live pointers** — `Get`/`FindByCallID`
+    returned the shared `*Session`, so webhook-path reads could race
+    scheduler writes. CI's `-race` caught it in a test; the fix makes
+    both methods return copies (`62cedd0`) — a production hardening,
+    not a test patch.
 
 ---
 
-## 11. What was deliberately *not* built
+## 12. What was deliberately *not* built
 
 - **No extra LLM** in orchestration (see §3.1).
 - **No inbound calls / telephony** — that's CALL-E's job (~45 countries,
@@ -341,7 +411,7 @@ Kept because the fixes are the story:
 
 ---
 
-## 12. Timeline (commit archaeology)
+## 13. Timeline (commit archaeology)
 
 | Era | Commits | What happened |
 |---|---|---|
@@ -350,16 +420,18 @@ Kept because the fixes are the story:
 | Rename | `24d24d7` | calle → callhook |
 | Frontend | `9fb1a3f`, `7f7dfa1`, `5c30739` | Monorepo restructure; the React war room; mobile drawer |
 | Campaigns | `e424c11` | Goal-driven engine, waves, early-stop, budgets |
-| Hardening | `d11e673`, `28efc2c` | Test coverage 4→10 files; 5 new blueprints (8 total) |
+| Hardening | `d11e673`, `28efc2c`, `62cedd0` | Test coverage 4→10 files; 5 new blueprints (8 total); CI race caught → session store returns copies |
+| Live-fire | `66846e1` | First real call: carrier saga, region fix, real transcript; webhook dedup + transcript enrichment |
 | Agent surface | `2981781`, `f44d18c` | MCP server; SSE stream |
 | Integrations | `17fe0a1` | 19 doc-verified adapters + packages + UI + docs |
 | Docs system | `c045442` | Contextual references, troubleshooting page |
+| Install & demo | `073dedf` | One-line installer (install.sh), first-run "Run the demo" button, docs refresh |
 | Deploy | `26f9910`, `9d10a5d` | Render-ready Dockerfile + blueprints |
 | Demo & polish | `d0956f7` → `8100dc8` | Live URL, mode dot, auth loudness, loading UX v1–v4 |
 
 ---
 
-## 13. The thesis, restated
+## 14. The thesis, restated
 
 Most phone-agent projects are one workflow: confirm an appointment, fill a
 shift, chase one invoice. **callhook is the layer underneath.** Point any
