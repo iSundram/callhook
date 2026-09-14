@@ -15,6 +15,16 @@
 
 ---
 
+<p align="center">
+  <a href="https://youtu.be/66siB3kIYMk" target="_blank">
+    <img src="https://img.youtube.com/vi/66siB3kIYMk/maxresdefault.jpg" width="560" alt="callhook — 3-minute demo (click to watch)" />
+  </a>
+</p>
+
+<p align="center"><em>3-minute demo: install → war room → real call → goal-driven campaign</em></p>
+
+---
+
 **Event-driven AI phone calls.** Your system fires a webhook; callhook places an
 intelligent phone call via [CALL-E](https://heycall-e.com) and POSTs a
 structured outcome back. No scripts, no robocalls — a voice agent that knows
