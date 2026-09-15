@@ -113,6 +113,7 @@ func main() {
 
 	outcomes := outcome.New(storeB, sessions)
 	outcomes.FetchCall = client.GetCall // enrich webhook payloads with full call (transcripts)
+	outcomes.CallbackSecret = os.Getenv("CALLHOOK_CALLBACK_SECRET") // HMAC-sign outcome callbacks when set
 	outcomes.RetryDelay = retryDelay
 
 	maxConcurrent := getint("CALLHOOK_MAX_CONCURRENT", 3)

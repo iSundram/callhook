@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
-import { timeAgo } from '../lib/format'
+import { timeAgo, maskPhone } from '../lib/format'
 import { TranscriptView, ActionTimeline, OutcomeBadge, StatusPill } from '../components/domain/shared'
 
 export default function SessionDetail() {
@@ -59,7 +59,7 @@ export default function SessionDetail() {
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div>
             <h1>{s.customer || s.customer_id}</h1>
-            <p className="mono">{s.id} · {s.phone}</p>
+            <p className="mono">{s.id} · {maskPhone(s.phone)}</p>
           </div>
           <div className="row">
             <span className="pill muted">{s.event_type}</span>

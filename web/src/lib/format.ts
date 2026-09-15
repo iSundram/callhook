@@ -32,3 +32,11 @@ export const OUTCOME_TONE: Record<string, string> = {
   callback_requested: 'muted',
   needs_human: 'warn',
 }
+
+// maskPhone hides the middle digits of an E.164 number in UI/audit output:
+// +919229373153 → +9192 ••• 3153. Privacy per the awesome-repo review.
+export function maskPhone(phone: string | undefined | null): string {
+  if (!phone) return '—'
+  if (phone.length <= 7) return phone
+  return phone.slice(0, 5) + ' ••• ' + phone.slice(-4)
+}

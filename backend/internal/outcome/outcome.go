@@ -6,6 +6,9 @@ package outcome
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -25,6 +28,10 @@ type Engine struct {
 	Client   *http.Client
 	// RetryDelay is how long to wait before redialing an unanswered customer.
 	RetryDelay time.Duration
+	// CallbackSecret, when set, HMAC-SHA256-signs every outcome callback in
+	// the X-Callhook-Signature header (sha256=<hex>) so the receiving system
+	// can verify authenticity of the transcript-bearing payload.
+	CallbackSecret string
 	// FetchCall, when set, is used to enrich terminal results: CALL-E's
 	// webhook payload can omit transcript turns, so we re-GET the call.
 	FetchCall func(ctx context.Context, callID string) (*callhookclient.CallTask, error)
@@ -167,6 +174,9 @@ func (e *Engine) retryable(ev *callhookclient.WebhookEvent, outcomeVal, sessID s
 }
 
 func (e *Engine) postBack(sess *session.Session, ev *callhookclient.WebhookEvent, actions []string) {
+	if sess.Event.CallbackURL == "" {
+		return
+	}
 	payload := map[string]any{
 		"event_id":     sess.Event.ID,
 		"event_type":   sess.Event.Type,
@@ -184,7 +194,18 @@ func (e *Engine) postBack(sess *session.Session, ev *callhookclient.WebhookEvent
 		log.Printf("outcome: marshal callback: %v", err)
 		return
 	}
-	resp, err := e.Client.Post(sess.Event.CallbackURL, "application/json", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, sess.Event.CallbackURL, bytes.NewReader(body))
+	if err != nil {
+		log.Printf("outcome: callback request: %v", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if e.CallbackSecret != "" {
+		mac := hmac.New(sha256.New, []byte(e.CallbackSecret))
+		mac.Write(body)
+		req.Header.Set("X-Callhook-Signature", "sha256="+hex.EncodeToString(mac.Sum(nil)))
+	}
+	resp, err := e.Client.Do(req)
 	if err != nil {
 		log.Printf("outcome: callback to %s failed: %v", sess.Event.CallbackURL, err)
 		e.Sessions.Log(sess.ID, "callback_failed", err.Error())

@@ -100,7 +100,9 @@ business app ──POST /api/events──► callhook ──CALL-E API──► 
 | Courtesy retries | `no_answer` redials up to 2 times; refusals and blocked/invalid numbers are never redialed |
 | Scheduled calls | `not_before` on any event parks it until the requested time |
 | Not forgeable | Webhook shared secret (`X-Callhook-Secret`) + bearer-token intake (set both on a public tunnel) |
+| Signed outcomes | With `CALLHOOK_CALLBACK_SECRET` set, every outcome callback carries `X-Callhook-Signature: sha256=<HMAC>` — verify it before trusting the transcript-bearing payload |
 | Flood-safe | Per-source rate limiting on event intake (60/min) |
+| Cancellation boundary | Server shutdown does not cancel in-flight calls (they complete on CALL-E's side; redelivered webhooks + journal replay pick up their outcomes on restart) and scheduled single events fire on the next boot — only campaigns resume mid-flight |
 
 ## Quickstart
 

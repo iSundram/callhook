@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { usePolling } from '../hooks/usePolling'
 import { api } from '../lib/api'
-import { timeAgo } from '../lib/format'
+import { timeAgo, maskPhone } from '../lib/format'
 import { OutcomeBadge, StatusPill } from '../components/domain/shared'
 
 export default function Sessions() {
@@ -72,7 +72,7 @@ export default function Sessions() {
                   <td><span className="pill muted">{s.event_type}</span></td>
                   <td><StatusPill status={s.call_status} /></td>
                   <td><OutcomeBadge outcome={s.outcome?.outcome} /></td>
-                  <td className="mono">{s.phone || '—'}</td>
+                  <td className="mono">{maskPhone(s.phone)}</td>
                   <td className="mono">{s.retry_count ? `${s.retry_count + 1}` : '1'}</td>
                   <td className="faint">{timeAgo(s.updated_at)}</td>
                 </tr>

@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -111,5 +112,45 @@ func TestSchedulerRunStopsOnCancel(t *testing.T) {
 		// ok
 	case <-time.After(time.Second):
 		t.Fatal("Run did not stop on cancel")
+	}
+}
+
+// TestRetryKeyAdvancesPerAttempt guards the idempotency-key regression from
+// the awesome-phone-call-agents review: a retry-triggered fire must pass the
+// POST-increment session to Place, so the redial derives a fresh CALL-E
+// idempotency key (<session>-a2) rather than replaying -a1.
+func TestRetryKeyAdvancesPerAttempt(t *testing.T) {
+	sessions := session.NewStore()
+	sessions.Create("k1", events.Event{ID: "k1", Type: "invoice.due"}, nil)
+	sessions.SetCallID("k1", "call_k1") // the initial -a1 call exists
+
+	var mu sync.Mutex
+	var gotCounts []int
+	s := &Scheduler{
+		Sessions: sessions,
+		Place: func(sess *session.Session) (*callhookclient.CallTask, bool, error) {
+			mu.Lock()
+			gotCounts = append(gotCounts, sess.RetryCount)
+			mu.Unlock()
+			return &callhookclient.CallTask{ID: "redial", Status: "completed"}, true, nil
+		},
+		Tick: time.Millisecond,
+	}
+
+	// The initial call (attempt 1, key -a1) is placed by the intake path —
+	// not the scheduler. Arm the first redial.
+	sessions.ScheduleRetry("k1", time.Now().UTC().Add(-time.Minute))
+	stop := runScheduler(s)
+	defer stop()
+	waitUntil(t, 2*time.Second, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(gotCounts) >= 1
+	})
+
+	mu.Lock()
+	defer mu.Unlock()
+	if gotCounts[0] != 1 {
+		t.Fatalf("redial saw RetryCount=%d, want 1 — PlaceCall would reuse the -a1 idempotency key and CALL-E would replay the original call", gotCounts[0])
 	}
 }

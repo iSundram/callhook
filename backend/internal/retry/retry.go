@@ -63,6 +63,18 @@ func (s *Scheduler) fire(sess *session.Session) {
 		return
 	}
 
+	// Re-fetch the session: IncrRetry advanced the store's counter, but the
+	// sess copy we hold is pre-increment. PlaceCall derives the attempt
+	// number (and therefore the CALL-E idempotency key) from RetryCount —
+	// passing the stale copy would reuse the previous attempt's key, and
+	// CALL-E's contract returns the original call for a reused key, so the
+	// redial would silently replay instead of dialing. Found by the
+	// awesome-phone-call-agents bot review (PR #610).
+	if fresh, ok := s.Sessions.Get(sess.ID); ok {
+		sess = fresh
+	}
+
+
 	_, placed, err := s.Place(sess)
 	if err != nil {
 		log.Printf("trigger %s (%s): %v", sess.ID, sess.NextRetryKind, err)
